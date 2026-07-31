@@ -16,7 +16,7 @@
   <!-- Écran 1 : Accueil / Étude -->
   <section id="screen-home" class="screen">
     <header class="home-header">
-      <h1 class="logo">NEBULA</h1>
+      <h1 id="group-logo" class="logo"></h1>
       <p class="tagline"></p>
     </header>
     <div id="study-grid" class="study-grid"></div>
@@ -30,7 +30,7 @@
       entre trois mémoires : <span class="dot dot-short"></span> courte,
       <span class="dot dot-medium"></span> moyenne et <span class="dot dot-long"></span> longue.
       Une erreur le fait revenir très vite ; trois bonnes réponses d'affilée l'envoient en
-      mémoire longue. Quand les 7 membres y sont, c'est gagné !</p>
+      mémoire longue. Quand tous les membres y sont, c'est gagné !</p>
     </details>
   </section>
 
@@ -63,7 +63,7 @@
     <div class="win-box">
       <div class="win-emoji">🏆</div>
       <h2>Bravo !</h2>
-      <p>Les 7 membres de <strong>NEBULA</strong> sont en mémoire long terme.</p>
+      <p id="win-text"></p>
       <dl class="win-stats">
         <div><dt>Questions</dt><dd id="stat-asked">0</dd></div>
         <div><dt>Précision</dt><dd id="stat-accuracy">0%</dd></div>

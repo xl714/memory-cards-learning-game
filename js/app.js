@@ -92,12 +92,14 @@
   // ---------- Écran accueil ----------
 
   function renderHome() {
-    $('.tagline').textContent = GROUP.tagline;
+    $('#group-logo').textContent = GROUP.name;
+    $('.tagline').textContent = `Apprends à reconnaître les ${GROUP.members.length} membres !`;
     const grid = $('#study-grid');
     grid.replaceChildren();
-    GROUP.members.forEach((m) => {
+    GROUP.members.forEach((m, i) => {
       const card = document.createElement('div');
       card.className = 'study-card';
+      card.style.setProperty('--i', i);
       card.appendChild(makePortrait(m));
       const name = document.createElement('span');
       name.className = 'member-name';
@@ -243,6 +245,8 @@
 
   function showWin() {
     const { asked, correct } = game.stats;
+    $('#win-text').innerHTML =
+      `Les ${GROUP.members.length} membres de <strong>${GROUP.name}</strong> sont en mémoire long terme.`;
     $('#stat-asked').textContent = asked;
     $('#stat-accuracy').textContent = Math.round((correct / asked) * 100) + '%';
     $('#stat-time').textContent = formatTime(elapsedMs);
@@ -287,6 +291,9 @@
   });
 
   $('#btn-replay').addEventListener('click', () => startNewGame());
+
+  // Graduations du curseur : une par étape, quel que soit le nombre de membres
+  $('.victory-track').style.setProperty('--steps', GROUP.members.length * STREAK_TO_LONG);
 
   renderHome();
   show('home');

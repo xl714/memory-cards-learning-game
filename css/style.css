@@ -104,13 +104,8 @@ body {
   text-align: center;
   box-shadow: var(--shadow);
   animation: pop-in 0.35s ease both;
+  animation-delay: calc(var(--i, 0) * 0.04s); /* --i posé par app.js, quel que soit l'effectif */
 }
-.study-card:nth-child(2) { animation-delay: 0.04s; }
-.study-card:nth-child(3) { animation-delay: 0.08s; }
-.study-card:nth-child(4) { animation-delay: 0.12s; }
-.study-card:nth-child(5) { animation-delay: 0.16s; }
-.study-card:nth-child(6) { animation-delay: 0.2s; }
-.study-card:nth-child(7) { animation-delay: 0.24s; }
 
 .study-card .portrait { width: 100%; }
 
@@ -214,7 +209,7 @@ body {
   position: relative;
 }
 
-/* Les 21 étapes (7 membres x 3 réussites) marquées sur la barre */
+/* Les étapes (nb membres x 3 réussites) marquées sur la barre ; --steps posé par app.js */
 .victory-track::after {
   content: '';
   position: absolute;
@@ -222,9 +217,9 @@ body {
   background: repeating-linear-gradient(
     90deg,
     transparent 0,
-    transparent calc(100% / 21 - 1px),
-    rgba(18, 16, 31, 0.55) calc(100% / 21 - 1px),
-    rgba(18, 16, 31, 0.55) calc(100% / 21)
+    transparent calc(100% / var(--steps, 21) - 1px),
+    rgba(18, 16, 31, 0.55) calc(100% / var(--steps, 21) - 1px),
+    rgba(18, 16, 31, 0.55) calc(100% / var(--steps, 21))
   );
   pointer-events: none;
 }

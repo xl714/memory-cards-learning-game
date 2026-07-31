@@ -100,6 +100,18 @@ const rnd0 = () => 0;
   assert.strictEqual(g2.progress(), 1);
 }
 
+// --- Le moteur est agnostique de l'effectif : partie parfaite à 4 membres
+{
+  const g = new MemoryGame(['a', 'b', 'c', 'd']);
+  let turns = 0;
+  while (!g.isWon()) {
+    assert.ok(++turns < 300, 'la partie à 4 doit converger');
+    g.answer(g.current());
+  }
+  assert.ok(turns >= 12, `minimum théorique 4 x 3 = 12 (obtenu : ${turns})`);
+  assert.strictEqual(g.progress(), 1);
+}
+
 // --- Sérialisation / reprise
 {
   const g = new MemoryGame(IDS, rnd0);
