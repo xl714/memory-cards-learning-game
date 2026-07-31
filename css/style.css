@@ -93,14 +93,17 @@ body {
 
 .tagline { color: var(--text-dim); margin-top: 6px; }
 
+/* Cartes centrées horizontalement, quel que soit l'effectif (y compris ligne incomplète) */
 .study-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 14px;
   margin-bottom: 24px;
 }
 
 .study-card {
+  width: clamp(110px, 28vw, 140px);
   background: var(--card);
   border-radius: var(--radius);
   padding: 10px;
