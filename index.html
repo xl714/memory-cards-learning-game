@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#12101f">
+  <meta name="description" content="Jeu de mémorisation : apprends les noms des membres du groupe NEBULA par répétition espacée.">
+  <title>Idol Memory — NEBULA</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Écran 1 : Accueil / Étude -->
+  <section id="screen-home" class="screen">
+    <header class="home-header">
+      <h1 class="logo">NEBULA</h1>
+      <p class="tagline"></p>
+    </header>
+    <div id="study-grid" class="study-grid"></div>
+    <div class="home-actions">
+      <button id="btn-start" class="btn btn-primary">Commencer</button>
+      <button id="btn-resume" class="btn btn-ghost hidden">Reprendre la partie</button>
+    </div>
+    <details class="rules">
+      <summary>Comment ça marche ?</summary>
+      <p>Une photo s'affiche : <strong>touche le bon nom</strong>. Chaque membre voyage
+      entre trois mémoires : <span class="dot dot-short"></span> courte,
+      <span class="dot dot-medium"></span> moyenne et <span class="dot dot-long"></span> longue.
+      Une erreur le fait revenir très vite ; trois bonnes réponses d'affilée l'envoient en
+      mémoire longue. Quand les 7 membres y sont, c'est gagné !</p>
+    </details>
+  </section>
+
+  <!-- Écran 2 : Jeu -->
+  <section id="screen-game" class="screen hidden">
+    <header class="game-header">
+      <button id="btn-quit" class="btn-icon" aria-label="Retour à l'accueil">←</button>
+      <div id="progress-tokens" class="progress-tokens" aria-label="Progression"></div>
+      <div id="turn-counter" class="turn-counter">#1</div>
+    </header>
+
+    <div class="photo-zone">
+      <div id="photo-card" class="photo-card" aria-label="Qui est-ce ?"></div>
+      <p class="prompt">Qui est-ce ?</p>
+    </div>
+
+    <div id="feedback" class="feedback hidden" aria-live="polite"></div>
+
+    <div id="names-grid" class="names-grid"></div>
+  </section>
+
+  <!-- Écran 3 : Victoire -->
+  <section id="screen-win" class="screen hidden">
+    <div class="win-box">
+      <div class="win-emoji">🏆</div>
+      <h2>Bravo !</h2>
+      <p>Les 7 membres de <strong>NEBULA</strong> sont en mémoire long terme.</p>
+      <dl class="win-stats">
+        <div><dt>Questions</dt><dd id="stat-asked">0</dd></div>
+        <div><dt>Précision</dt><dd id="stat-accuracy">0%</dd></div>
+        <div><dt>Temps</dt><dd id="stat-time">0:00</dd></div>
+      </dl>
+      <button id="btn-replay" class="btn btn-primary">Rejouer</button>
+    </div>
+  </section>
+
+  <script src="js/data.js"></script>
+  <script src="js/memory.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
