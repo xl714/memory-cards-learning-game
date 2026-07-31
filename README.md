@@ -20,10 +20,15 @@ textes s'adaptent automatiquement quand on en ajoute ou retire.
 4. La **difficulté** fixe le nombre de bonnes réponses d'affilée pour compléter chaque niveau :
    **facile** 1 (jauge de 3 crans), **moyen** 2 (jauge de 6, défaut), **difficile** 3 (jauge de 9).
 5. Une erreur renvoie toujours le membre en mémoire courte (et remet son compteur à zéro).
-6. Le **curseur de victoire** montre la progression globale : 100 % = nombre de membres × crans de la
+6. **L'espacement est garanti** : si la file d'attente est trop courte pour offrir l'écart voulu
+   (par exemple avec 1 ou 2 membres seulement), des **cartes d'interférence** — de petits calculs
+   mentaux — s'intercalent pour occuper la mémoire entre deux passages d'un visage. Sans elles,
+   impossible de tester une mémoire plus longue que la mémoire courte avec un petit effectif.
+   Les réponses aux calculs n'affectent pas les jauges : seul leur passage compte.
+7. Le **curseur de victoire** montre la progression globale : 100 % = nombre de membres × crans de la
    jauge, matérialisés par les graduations de la barre. Chaque cran gagné fait monter le curseur avec
    un gain vert ; chaque erreur affiche la perte en rouge et fait redescendre le curseur d'autant.
-7. **Victoire** quand toutes les jauges sont pleines — la mémoire longue de chaque membre doit avoir
+8. **Victoire** quand toutes les jauges sont pleines — la mémoire longue de chaque membre doit avoir
    été validée par ses contrôles, pas seulement atteinte. Stats à la clé (questions, précision, temps).
 
 Le bouton **⚙ Réglages** (accueil et jeu) ouvre les options, mémorisées entre les sessions :

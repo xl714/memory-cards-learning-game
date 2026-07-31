@@ -1,6 +1,18 @@
 // Test rapide du moteur de répétition espacée : node tests/memory.test.js
 const assert = require('assert');
-const { MemoryGame, BOX } = require('../js/memory.js');
+const { MemoryGame, BOX, FILLER } = require('../js/memory.js');
+
+// Joue parfaitement jusqu'à la victoire (résout aussi les cartes d'interférence)
+// et renvoie { turns: réponses visages, fillers: calculs traversés }.
+function playPerfect(g, maxTurns = 2000) {
+  let turns = 0, fillers = 0;
+  while (!g.isWon()) {
+    assert.ok(turns + fillers < maxTurns, 'la partie doit converger');
+    if (g.nextIsFiller()) { g.resolveFiller(true); fillers++; }
+    else { g.answer(g.current()); turns++; }
+  }
+  return { turns, fillers };
+}
 
 const IDS = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
 // Aléa déterministe : toujours 0 => pas de mélange, gaps minimaux (moyenne=4, longue=10)
@@ -27,6 +39,7 @@ const rnd0 = () => 0;
       const expected = i >= toLong ? BOX.LONG : i >= toMedium ? BOX.MEDIUM : BOX.SHORT;
       assert.strictEqual(g.boxOf('x'), expected, `spl=${spl}, streak=${i}`);
       assert.strictEqual(g.isWon(), false, `spl=${spl}, streak=${i} : pas encore gagné`);
+      while (g.nextIsFiller()) g.resolveFiller(true);
       g.answer('x');
     }
     assert.strictEqual(g.boxOf('x'), BOX.LONG);
@@ -43,12 +56,52 @@ const rnd0 = () => 0;
   assert.strictEqual(g.queue.indexOf(first), 4, 'carte moyenne replanifiée vers la position 4');
 }
 
+// --- Espacement garanti par cartes d'interférence : même à 1 ou 2 membres,
+//     l'écart demandé est respecté (complété par des mini-calculs)
+{
+  const g = new MemoryGame(['solo'], rnd0, 1);
+  g.answer('solo'); // -> moyenne, écart voulu : 4
+  assert.deepStrictEqual(g.queue, [FILLER, FILLER, FILLER, FILLER, 'solo'],
+    'la file est complétée par 4 calculs avant le retour de la carte');
+  for (let i = 0; i < 4; i++) { assert.ok(g.nextIsFiller()); g.resolveFiller(true); }
+  assert.strictEqual(g.current(), 'solo');
+  g.answer('solo'); // -> longue (facile), écart voulu : 10
+  assert.strictEqual(g.queue.indexOf('solo'), 10, 'contrôle de mémoire longue après 10 cartes');
+  assert.strictEqual(g.queue.filter((x) => x === FILLER).length, 10);
+  assert.strictEqual(g.stats.fillerAsked, 4);
+  assert.strictEqual(g.stats.fillerCorrect, 4);
+}
+
+// --- Un calcul raté n'affecte aucune jauge
+{
+  const g = new MemoryGame(['solo'], rnd0, 1);
+  g.answer('solo');
+  const streakBefore = g.cards.solo.streak;
+  const progressBefore = g.progress();
+  g.resolveFiller(false);
+  assert.strictEqual(g.cards.solo.streak, streakBefore);
+  assert.strictEqual(g.progress(), progressBefore);
+  assert.strictEqual(g.stats.fillerAsked, 1);
+  assert.strictEqual(g.stats.fillerCorrect || 0, 0);
+}
+
+// --- Partie parfaite à 1 membre : gagnable, avec de vrais écarts entre passages
+{
+  const g = new MemoryGame(['solo'], Math.random, 1);
+  const { turns, fillers } = playPerfect(g);
+  assert.strictEqual(turns, 3, '3 réponses visage suffisent en facile (jauge de 3)');
+  assert.ok(fillers >= 14, `au moins 4 + 10 calculs d'interférence (obtenu : ${fillers})`);
+}
+
 // --- Un KO fait retomber une carte montée en mémoire courte
 {
   const g = new MemoryGame(IDS, rnd0, 1);
   const first = g.current();
   g.answer(first); // -> moyenne
-  while (g.current() !== first) g.answer(g.current());
+  while (g.current() !== first) {
+    if (g.nextIsFiller()) g.resolveFiller(true);
+    else g.answer(g.current());
+  }
   g.answer('WRONG');
   assert.strictEqual(g.boxOf(first), BOX.SHORT);
   assert.strictEqual(g.cards[first].streak, 0);
@@ -75,12 +128,11 @@ const rnd0 = () => 0;
 {
   for (const [spl, minTurns] of [[1, 21], [2, 42], [3, 63]]) {
     const g = new MemoryGame(IDS, Math.random, spl);
-    let turns = 0;
-    while (!g.isWon()) {
-      assert.ok(++turns < 900, `la partie (spl=${spl}) doit converger`);
-      g.answer(g.current());
-    }
-    assert.ok(turns >= minTurns, `minimum théorique 7 x ${3 * spl} = ${minTurns} pour spl=${spl} (obtenu : ${turns})`);
+    const { turns } = playPerfect(g);
+    // Minimum 7 x 3 x spl ; quelques contrôles de membres déjà acquis peuvent s'y ajouter
+    // pendant que les autres finissent.
+    assert.ok(turns >= minTurns && turns <= minTurns + 15,
+      `~${minTurns} réponses visage pour spl=${spl} (obtenu : ${turns})`);
     assert.strictEqual(g.progress(), 1);
     assert.strictEqual(g.stats.wrong, 0);
   }
@@ -93,7 +145,10 @@ const rnd0 = () => 0;
   const first = g.current();
   g.answer(first);
   assert.ok(Math.abs(g.progress() - 1 / (7 * 6)) < 1e-9);
-  while (g.current() !== first) g.answer(g.current());
+  while (g.current() !== first) {
+    if (g.nextIsFiller()) g.resolveFiller(true);
+    else g.answer(g.current());
+  }
   const before = g.progress();
   g.answer('WRONG');
   assert.ok(g.progress() < before, 'le curseur redescend après une erreur');
@@ -102,22 +157,21 @@ const rnd0 = () => 0;
 // --- Le moteur est agnostique de l'effectif : partie parfaite à 4 membres (facile)
 {
   const g = new MemoryGame(['a', 'b', 'c', 'd'], Math.random, 1);
-  let turns = 0;
-  while (!g.isWon()) {
-    assert.ok(++turns < 300, 'la partie à 4 doit converger');
-    g.answer(g.current());
-  }
-  assert.ok(turns >= 12, `minimum théorique 4 x 3 = 12 (obtenu : ${turns})`);
+  const { turns } = playPerfect(g);
+  assert.ok(turns >= 12 && turns <= 20, `~12 réponses visage minimum (obtenu : ${turns})`);
 }
 
-// --- Jamais deux fois la même carte de suite (sur une partie chaotique)
+// --- Jamais deux fois la même carte de suite, calculs compris (partie chaotique)
 {
   const g = new MemoryGame(IDS);
   let prev = null;
-  for (let i = 0; i < 300 && !g.isWon(); i++) {
+  for (let i = 0; i < 400 && !g.isWon(); i++) {
     const cur = g.current();
-    assert.notStrictEqual(cur, prev, 'la même carte ne doit pas être posée deux fois de suite');
-    g.answer(i % 3 === 0 ? 'WRONG' : cur);
+    if (cur !== FILLER) {
+      assert.notStrictEqual(cur, prev, 'le même visage ne doit pas être posé deux fois de suite');
+    }
+    if (g.nextIsFiller()) g.resolveFiller(i % 4 === 0);
+    else g.answer(i % 3 === 0 ? 'WRONG' : cur);
     prev = cur;
   }
 }

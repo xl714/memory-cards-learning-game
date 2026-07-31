@@ -15,10 +15,14 @@
 //   - courte  -> position 2 (revient comme 3e question)
 //   - moyenne -> position 4-5
 //   - longue  -> position 10-12 (contrôles rares)
+// L'espacement est GARANTI : si la file est trop courte pour offrir l'écart voulu
+// (petit effectif), elle est complétée par des cartes d'interférence (mini-calculs,
+// jeton FILLER) qui occupent la mémoire du joueur entre deux passages d'un visage.
 // Victoire quand toutes les jauges sont pleines (tous les niveaux complétés).
 
 const BOX = { SHORT: 0, MEDIUM: 1, LONG: 2 };
 const MEMORY_LEVELS = 3; // courte, moyenne, longue — chacune à compléter
+const FILLER = '#math';  // carte d'interférence dans la file (ne peut pas être un id de membre)
 
 const GAP = {
   [BOX.SHORT]: () => 2,
@@ -63,6 +67,18 @@ class MemoryGame {
     return this.queue[0] ?? null;
   }
 
+  nextIsFiller() {
+    return this.queue[0] === FILLER;
+  }
+
+  // Consomme la carte d'interférence courante (mini-calcul) ; sans effet sur les jauges.
+  resolveFiller(correct) {
+    if (this.queue[0] !== FILLER) return;
+    this.queue.shift();
+    this.stats.fillerAsked = (this.stats.fillerAsked || 0) + 1;
+    if (correct) this.stats.fillerCorrect = (this.stats.fillerCorrect || 0) + 1;
+  }
+
   boxOf(id) {
     const s = this.cards[id].streak;
     if (s >= this.spl * 2) return BOX.LONG;   // courte et moyenne complétées
@@ -92,6 +108,7 @@ class MemoryGame {
   // Enregistre la réponse pour la carte courante et replanifie sa prochaine apparition.
   // Renvoie { correct, card } pour piloter le feedback UI.
   answer(chosenId) {
+    if (this.nextIsFiller()) throw new Error('carte d’interférence en tête de file : utiliser resolveFiller()');
     const id = this.queue.shift();
     const card = this.cards[id];
     const correct = chosenId === id;
@@ -110,9 +127,10 @@ class MemoryGame {
   }
 
   _reinsert(card) {
-    let pos = Math.min(GAP[this.boxOf(card.id)](this.rnd), this.queue.length);
-    // Ne jamais reposer la même carte immédiatement s'il y a d'autres cartes en attente.
-    if (pos === 0 && this.queue.length > 0) pos = 1;
+    const pos = GAP[this.boxOf(card.id)](this.rnd);
+    // Espacement garanti : si la file ne peut pas offrir l'écart voulu, on la
+    // complète par des cartes d'interférence avant de replacer la carte.
+    while (this.queue.length < pos) this.queue.push(FILLER);
     this.queue.splice(pos, 0, card.id);
   }
 
@@ -131,4 +149,4 @@ class MemoryGame {
   }
 }
 
-if (typeof module !== 'undefined') module.exports = { MemoryGame, BOX, MEMORY_LEVELS, shuffle };
+if (typeof module !== 'undefined') module.exports = { MemoryGame, BOX, MEMORY_LEVELS, FILLER, shuffle };

@@ -6,6 +6,8 @@
   const PREFS_KEY = 'idol-memory-prefs-v1';
   const FEEDBACK_MS_OK = 900;
   const FEEDBACK_MS_KO = 1700; // plus long : on laisse le temps de voir la bonne réponse
+  const FEEDBACK_MS_MATH_OK = 600;  // les calculs s'enchaînent plus vite
+  const FEEDBACK_MS_MATH_KO = 1200;
   const MAX_TURN_MS = 30000;   // au-delà, le temps d'une question n'est plus compté (joueur AFK)
 
   const $ = (sel) => document.querySelector(sel);
@@ -266,18 +268,23 @@
   }
 
   function renderQuestion() {
-    const id = game.current();
-    const member = membersById[id];
-
     $('#turn-counter').textContent = '#' + (game.stats.asked + 1);
     renderTokens();
 
+    if (game.nextIsFiller()) {
+      renderMathQuestion();
+      return;
+    }
+
+    const member = membersById[game.current()];
+
     // Photo courante (avec animation d'entrée)
     const card = $('#photo-card');
-    card.classList.remove('slide-in', 'shake');
+    card.classList.remove('slide-in', 'shake', 'math');
     void card.offsetWidth; // relance l'animation
     card.classList.add('slide-in');
     card.replaceChildren(makePortrait(member));
+    $('.prompt').textContent = 'Qui est-ce ?';
 
     // Noms mélangés à chaque question (anti-mémorisation spatiale)
     const grid = $('#names-grid');
@@ -293,6 +300,79 @@
 
     locked = false;
     turnStart = Date.now();
+  }
+
+  // ---------- Cartes d'interférence (mini-calculs) ----------
+
+  function makeMathQuestion() {
+    const r = (n) => Math.floor(Math.random() * n);
+    const ops = [
+      () => { const a = 2 + r(18), b = 2 + r(18); return { text: `${a} + ${b}`, answer: a + b }; },
+      () => { const a = 6 + r(19), b = 2 + r(a - 2); return { text: `${a} − ${b}`, answer: a - b }; },
+      () => { const a = 2 + r(8), b = 2 + r(8); return { text: `${a} × ${b}`, answer: a * b }; },
+    ];
+    const q = ops[r(ops.length)]();
+    const choices = new Set([q.answer]);
+    while (choices.size < 4) {
+      const offset = (1 + r(4)) * (r(2) ? 1 : -1);
+      if (q.answer + offset >= 0) choices.add(q.answer + offset);
+    }
+    q.choices = shuffled([...choices]);
+    return q;
+  }
+
+  // Question d'interférence : occupe la mémoire entre deux passages d'un visage.
+  // Sans effet sur les jauges — c'est l'espacement qui compte.
+  function renderMathQuestion() {
+    const q = makeMathQuestion();
+
+    const card = $('#photo-card');
+    card.classList.remove('slide-in', 'shake');
+    void card.offsetWidth;
+    card.classList.add('slide-in', 'math');
+    const op = document.createElement('div');
+    op.className = 'math-op';
+    op.textContent = q.text;
+    card.replaceChildren(op);
+    $('.prompt').textContent = 'Petit calcul !';
+
+    const grid = $('#names-grid');
+    grid.replaceChildren();
+    q.choices.forEach((n) => {
+      const btn = document.createElement('button');
+      btn.className = 'name-btn';
+      btn.textContent = n;
+      btn.addEventListener('click', () => onMathAnswer(n, q.answer));
+      grid.appendChild(btn);
+    });
+
+    locked = false;
+    turnStart = Date.now();
+  }
+
+  function onMathAnswer(value, expected) {
+    if (locked) return;
+    locked = true;
+
+    elapsedMs += Math.min(Date.now() - turnStart, MAX_TURN_MS);
+    const correct = value === expected;
+    game.resolveFiller(correct);
+    save();
+
+    const buttons = [...document.querySelectorAll('.name-btn')];
+    buttons.forEach((b) => { b.disabled = true; });
+    const chosenBtn = buttons.find((b) => Number(b.textContent) === value);
+    const correctBtn = buttons.find((b) => Number(b.textContent) === expected);
+
+    stamp(correct ? 'ok' : 'ko');
+    if (correct) {
+      chosenBtn.classList.add('correct');
+    } else {
+      chosenBtn.classList.add('wrong');
+      correctBtn.classList.add('correct', 'reveal');
+    }
+
+    nextTimer = setTimeout(renderQuestion, correct ? FEEDBACK_MS_MATH_OK : FEEDBACK_MS_MATH_KO);
   }
 
   function stamp(kind) {

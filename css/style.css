@@ -465,6 +465,23 @@ dialog form { text-align: center; margin-top: 8px; }
   color: rgba(255, 255, 255, 0.9);
 }
 
+/* Carte d'interférence : mini-calcul entre deux visages */
+.photo-card.math { box-shadow: var(--shadow), 0 0 0 3px rgba(96, 165, 250, 0.4); }
+
+.math-op {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 46px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  background: linear-gradient(160deg, #1d2a4d 0%, var(--bg-soft) 90%);
+}
+
 .photo-card.slide-in { animation: slide-in 0.3s ease both; }
 .photo-card.shake { animation: shake 0.45s ease; }
 
