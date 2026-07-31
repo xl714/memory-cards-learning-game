@@ -385,6 +385,8 @@ dialog {
   color: var(--text);
   padding: 24px;
   width: min(90vw, 360px);
+  max-height: 85dvh;
+  overflow-y: auto;
   box-shadow: var(--shadow);
 }
 dialog::backdrop {
