@@ -3,6 +3,7 @@
   'use strict';
 
   const SAVE_KEY = 'idol-memory-save-v1';
+  const PREFS_KEY = 'idol-memory-prefs-v1';
   const FEEDBACK_MS_OK = 900;
   const FEEDBACK_MS_KO = 1700; // plus long : on laisse le temps de voir la bonne réponse
   const MAX_TURN_MS = 30000;   // au-delà, le temps d'une question n'est plus compté (joueur AFK)
@@ -19,6 +20,24 @@
   let turnStart = 0;
   let locked = false;   // bloque les clics pendant le feedback
   let nextTimer = null; // timeout vers la question suivante (annulé si on quitte/relance)
+
+  // Préférences (persistées) : mode d'affichage du score
+  //  - 'global'    : barre de progression unique + jetons (mode 1)
+  //  - 'perMember' : une barre verticale par membre, photo en dessous (mode 2)
+  const prefs = { scoreMode: 'global' };
+  try { Object.assign(prefs, JSON.parse(localStorage.getItem(PREFS_KEY)) || {}); } catch (e) { /* défauts */ }
+
+  function savePrefs() {
+    try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) { /* ignore */ }
+  }
+
+  function applyScoreMode() {
+    const per = prefs.scoreMode === 'perMember';
+    $('.victory-meter').classList.toggle('hidden', per);
+    $('#progress-tokens').classList.toggle('hidden', per);
+    $('#member-bars').classList.toggle('hidden', !per);
+    if (game) renderTokens();
+  }
 
   const membersById = {};
   GROUP.members.forEach((m) => { membersById[m.id] = m; });
@@ -118,9 +137,28 @@
     $('#victory-pct').textContent = pct + '%';
   }
 
-  // Rend la progression/régression visible : « +4,8 % » en vert quand un membre monte
-  // d'une mémoire (court -> moyen -> long), « -9,5 % » en rouge + barre rouge quand une
-  // erreur le fait retomber en mémoire courte.
+  // Rend la progression/régression visible, selon le mode d'affichage :
+  //  - mode global : chip « +8,3 % » vert / « -X % » rouge + flash rouge de la barre ;
+  //  - mode par membre : la barre du membre concerné rebondit, et flashe en rouge s'il régresse.
+  function showScoreDelta(memberId, deltaSteps) {
+    if (deltaSteps === 0) return;
+    if (prefs.scoreMode === 'perMember') {
+      const idx = GROUP.members.findIndex((m) => m.id === memberId);
+      const bar = $('#member-bars').children[idx];
+      if (!bar) return;
+      bar.classList.remove('bump');
+      void bar.offsetWidth; // relance l'animation
+      bar.classList.add('bump');
+      if (deltaSteps < 0) {
+        const fill = bar.querySelector('.mbar-fill');
+        fill.classList.add('regress');
+        setTimeout(() => fill.classList.remove('regress'), 900);
+      }
+    } else {
+      showVictoryDelta(deltaSteps / (GROUP.members.length * STREAK_TO_LONG));
+    }
+  }
+
   function showVictoryDelta(delta) {
     if (delta === 0) return;
     const chip = $('#victory-delta');
@@ -136,8 +174,36 @@
     }
   }
 
+  // Mode 2 : une barre verticale par membre — le remplissage monte d'un cran (1/3)
+  // par bonne réponse consécutive, coloré selon la mémoire atteinte.
+  function renderMemberBars() {
+    const wrap = $('#member-bars');
+    GROUP.members.forEach((m, i) => {
+      let bar = wrap.children[i];
+      if (!bar) {
+        bar = document.createElement('div');
+        bar.className = 'mbar';
+        const track = document.createElement('div');
+        track.className = 'mbar-track';
+        track.appendChild(document.createElement('div')).className = 'mbar-fill';
+        const photo = document.createElement('div');
+        photo.className = 'mbar-photo';
+        photo.appendChild(makePortrait(m));
+        bar.append(track, photo);
+        wrap.appendChild(bar);
+      }
+      const card = game.cards[m.id];
+      const steps = Math.min(card.streak, STREAK_TO_LONG);
+      const fill = bar.querySelector('.mbar-fill');
+      fill.style.height = (steps / STREAK_TO_LONG) * 100 + '%';
+      fill.classList.remove('box-1', 'box-2');
+      if (card.box > 0) fill.classList.add('box-' + card.box);
+    });
+  }
+
   function renderTokens() {
     renderVictoryMeter();
+    renderMemberBars();
     const box = $('#progress-tokens');
     GROUP.members.forEach((m, i) => {
       let token = box.children[i];
@@ -203,10 +269,10 @@
     elapsedMs += Math.min(Date.now() - turnStart, MAX_TURN_MS);
 
     const currentId = game.current();
-    const progressBefore = game.progress();
+    const stepsBefore = Math.min(game.cards[currentId].streak, STREAK_TO_LONG);
     const { correct } = game.answer(chosenId);
     save();
-    showVictoryDelta(game.progress() - progressBefore);
+    showScoreDelta(currentId, Math.min(game.cards[currentId].streak, STREAK_TO_LONG) - stepsBefore);
 
     const buttons = [...document.querySelectorAll('.name-btn')];
     buttons.forEach((b) => { b.disabled = true; });
@@ -292,9 +358,37 @@
 
   $('#btn-replay').addEventListener('click', () => startNewGame());
 
+  // ---------- Réglages ----------
+
+  const settingsDialog = $('#settings-dialog');
+
+  function openSettings() {
+    document.querySelectorAll('input[name="score-mode"]').forEach((r) => {
+      r.checked = r.value === prefs.scoreMode;
+    });
+    settingsDialog.showModal();
+  }
+
+  $('#btn-settings-home').addEventListener('click', openSettings);
+  $('#btn-settings-game').addEventListener('click', openSettings);
+
+  document.querySelectorAll('input[name="score-mode"]').forEach((r) => {
+    r.addEventListener('change', () => {
+      prefs.scoreMode = r.value;
+      savePrefs();
+      applyScoreMode();
+    });
+  });
+
+  // Clic sur le fond = fermer
+  settingsDialog.addEventListener('click', (e) => {
+    if (e.target === settingsDialog) settingsDialog.close();
+  });
+
   // Graduations du curseur : une par étape, quel que soit le nombre de membres
   $('.victory-track').style.setProperty('--steps', GROUP.members.length * STREAK_TO_LONG);
 
+  applyScoreMode();
   renderHome();
   show('home');
 

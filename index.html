@@ -15,6 +15,7 @@
 
   <!-- Écran 1 : Accueil / Étude -->
   <section id="screen-home" class="screen">
+    <button id="btn-settings-home" class="btn-icon home-settings" aria-label="Réglages">⚙</button>
     <header class="home-header">
       <h1 id="group-logo" class="logo"></h1>
       <p class="tagline"></p>
@@ -40,13 +41,18 @@
       <button id="btn-quit" class="btn-icon" aria-label="Retour à l'accueil">←</button>
       <div id="progress-tokens" class="progress-tokens" aria-label="Mémoire par membre"></div>
       <div id="turn-counter" class="turn-counter">#1</div>
+      <button id="btn-settings-game" class="btn-icon" aria-label="Réglages">⚙</button>
     </header>
 
+    <!-- Mode 1 : barre globale -->
     <div class="victory-meter" aria-label="Progression vers la victoire">
       <div class="victory-track"><div id="victory-fill" class="victory-fill"></div></div>
       <span id="victory-delta" class="victory-delta" aria-live="polite"></span>
       <span id="victory-pct" class="victory-pct">0%</span>
     </div>
+
+    <!-- Mode 2 : une barre verticale par membre, photo en dessous -->
+    <div id="member-bars" class="member-bars hidden" aria-label="Score par membre"></div>
 
     <div class="photo-zone">
       <div id="photo-card" class="photo-card" aria-label="Qui est-ce ?"></div>
@@ -72,6 +78,23 @@
       <button id="btn-replay" class="btn btn-primary">Rejouer</button>
     </div>
   </section>
+
+  <!-- Réglages -->
+  <dialog id="settings-dialog">
+    <h3>Réglages</h3>
+    <p class="dialog-sub">Affichage du score</p>
+    <label class="mode-option">
+      <input type="radio" name="score-mode" value="global">
+      <span><strong>Barre globale</strong>
+      <small>Une barre de progression unique, graduée, avec un jeton par membre.</small></span>
+    </label>
+    <label class="mode-option">
+      <input type="radio" name="score-mode" value="perMember">
+      <span><strong>Barres par membre</strong>
+      <small>Une barre verticale par membre avec sa photo : le score monte image par image.</small></span>
+    </label>
+    <form method="dialog"><button class="btn btn-primary">Fermer</button></form>
+  </dialog>
 
   <script src="js/data.js"></script>
   <script src="js/memory.js"></script>

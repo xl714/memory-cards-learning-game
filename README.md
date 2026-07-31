@@ -23,6 +23,11 @@ textes s'adaptent automatiquement quand on en ajoute ou retire.
    chaque erreur affiche la perte en rouge et fait redescendre le curseur d'autant.
 6. **Victoire** quand tous les membres sont en mémoire longue — avec tes stats (questions, précision, temps).
 
+Le bouton **⚙ Réglages** (accueil et jeu) permet de choisir l'affichage du score, mémorisé entre les sessions :
+- **Barre globale** (défaut) : la barre graduée unique + un jeton coloré par membre ;
+- **Barres par membre** : une barre verticale par membre (3 crans, curseur blanc, couleur de la mémoire
+  atteinte) avec sa photo en dessous — le score monte image par image.
+
 La partie est sauvegardée automatiquement (localStorage) : tu peux fermer l'app et reprendre plus tard.
 
 ## Lancer le jeu
