@@ -14,19 +14,22 @@ textes s'adaptent automatiquement quand on en ajoute ou retire.
 2. **Jeu** : une photo s'affiche — **clique sur le bon nom** parmi ceux proposés (mélangés à chaque question).
 3. Chaque membre voyage entre trois mémoires :
    - 🔴 **Mémoire courte** — erreur : le membre revient très vite (3ᵉ question suivante) ;
-   - 🟡 **Mémoire moyenne** — bonne réponse : il revient un peu plus tard ;
-   - 🟢 **Mémoire longue** — 3 bonnes réponses d'affilée : il ne revient que rarement, pour contrôle.
-4. Une erreur renvoie toujours le membre en mémoire courte (et remet son compteur à zéro).
-5. Le **curseur de victoire** montre la progression globale : 100 % = nombre de membres × 3 étapes,
-   matérialisées par les graduations de la barre (12 pour la démo à 4 membres). Chaque promotion
-   (court → moyen → long) fait monter le curseur avec un gain vert (« +8,3 % » à 4 membres) ;
-   chaque erreur affiche la perte en rouge et fait redescendre le curseur d'autant.
-6. **Victoire** quand tous les membres sont en mémoire longue — avec tes stats (questions, précision, temps).
+   - 🟡 **Mémoire moyenne** — il revient un peu plus tard ;
+   - 🟢 **Mémoire longue** — il ne revient que rarement, pour contrôle.
+4. La **difficulté** fixe le nombre de bonnes réponses d'affilée pour monter d'un niveau de mémoire :
+   **facile** 1 (jauge de 2 crans), **moyen** 2 (jauge de 4, défaut), **difficile** 3 (jauge de 6).
+5. Une erreur renvoie toujours le membre en mémoire courte (et remet son compteur à zéro).
+6. Le **curseur de victoire** montre la progression globale : 100 % = nombre de membres × crans de la
+   jauge, matérialisés par les graduations de la barre. Chaque cran gagné fait monter le curseur avec
+   un gain vert ; chaque erreur affiche la perte en rouge et fait redescendre le curseur d'autant.
+7. **Victoire** quand tous les membres sont en mémoire longue — avec tes stats (questions, précision, temps).
 
-Le bouton **⚙ Réglages** (accueil et jeu) permet de choisir l'affichage du score, mémorisé entre les sessions :
-- **Barre globale** (défaut) : la barre graduée unique + un jeton coloré par membre ;
-- **Barres par membre** : une barre verticale par membre (3 crans, curseur blanc, couleur de la mémoire
-  atteinte) avec sa photo en dessous — le score monte image par image.
+Le bouton **⚙ Réglages** (accueil et jeu) ouvre les options, mémorisées entre les sessions :
+- **Difficulté** : facile / moyen / difficile — modifiable même en pleine partie (les séries en cours
+  sont conservées, seuls les seuils bougent) ;
+- **Affichage du score** : **barre globale** (défaut, graduée + un jeton coloré par membre) ou
+  **barres par membre** (une barre verticale par membre, curseur blanc, photo en dessous — le score
+  monte image par image, avec badge « +1 » / « −N » à chaque changement).
 
 La partie est sauvegardée automatiquement (localStorage) : tu peux fermer l'app et reprendre plus tard.
 

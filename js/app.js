@@ -21,11 +21,17 @@
   let locked = false;   // bloque les clics pendant le feedback
   let nextTimer = null; // timeout vers la question suivante (annulé si on quitte/relance)
 
-  // Préférences (persistées) : mode d'affichage du score
-  //  - 'global'    : barre de progression unique + jetons (mode 1)
-  //  - 'perMember' : une barre verticale par membre, photo en dessous (mode 2)
-  const prefs = { scoreMode: 'global' };
+  // Préférences (persistées) :
+  //  - scoreMode : 'global' (barre unique + jetons) ou 'perMember' (une barre par membre)
+  //  - difficulty : bonnes réponses consécutives par niveau de mémoire
+  const SPL = { facile: 1, moyen: 2, difficile: 3 };
+  const prefs = { scoreMode: 'global', difficulty: 'moyen' };
   try { Object.assign(prefs, JSON.parse(localStorage.getItem(PREFS_KEY)) || {}); } catch (e) { /* défauts */ }
+  if (!SPL[prefs.difficulty]) prefs.difficulty = 'moyen';
+
+  function stepsPerLevel() {
+    return SPL[prefs.difficulty];
+  }
 
   function savePrefs() {
     try { localStorage.setItem(PREFS_KEY, JSON.stringify(prefs)); } catch (e) { /* ignore */ }
@@ -37,6 +43,19 @@
     $('#progress-tokens').classList.toggle('hidden', per);
     $('#member-bars').classList.toggle('hidden', !per);
     if (game) renderTokens();
+  }
+
+  // Applique la difficulté aux graduations et à la partie en cours (les séries
+  // restent, seuls les seuils bougent — la partie peut même devenir gagnée).
+  function applyDifficulty() {
+    const total = SPL[prefs.difficulty] * 2; // crans d'une jauge (2 niveaux à monter)
+    $('.victory-track').style.setProperty('--steps', GROUP.members.length * total);
+    $('#member-bars').style.setProperty('--bar-steps', total);
+    if (game) {
+      game.setStepsPerLevel(SPL[prefs.difficulty]);
+      renderTokens();
+      if (game.isWon() && !screens.game.classList.contains('hidden')) showWin();
+    }
   }
 
   const membersById = {};
@@ -142,7 +161,7 @@
   //  - mode par membre : la barre du membre concerné rebondit, et flashe en rouge s'il régresse.
   function showScoreDelta(memberId, deltaSteps, correct) {
     if (prefs.scoreMode !== 'perMember') {
-      if (deltaSteps !== 0) showVictoryDelta(deltaSteps / (GROUP.members.length * STREAK_TO_LONG));
+      if (deltaSteps !== 0) showVictoryDelta(deltaSteps / (GROUP.members.length * game.streakToLong));
       return;
     }
     const idx = GROUP.members.findIndex((m) => m.id === memberId);
@@ -218,12 +237,11 @@
         bar.append(track, photo);
         wrap.appendChild(bar);
       }
-      const card = game.cards[m.id];
-      const steps = Math.min(card.streak, STREAK_TO_LONG);
+      const box = game.boxOf(m.id);
       const fill = bar.querySelector('.mbar-fill');
-      fill.style.height = (steps / STREAK_TO_LONG) * 100 + '%';
+      fill.style.height = (game.stepsOf(m.id) / game.streakToLong) * 100 + '%';
       fill.classList.remove('box-1', 'box-2');
-      if (card.box > 0) fill.classList.add('box-' + card.box);
+      if (box > 0) fill.classList.add('box-' + box);
     });
   }
 
@@ -295,10 +313,10 @@
     elapsedMs += Math.min(Date.now() - turnStart, MAX_TURN_MS);
 
     const currentId = game.current();
-    const stepsBefore = Math.min(game.cards[currentId].streak, STREAK_TO_LONG);
+    const stepsBefore = game.stepsOf(currentId);
     const { correct } = game.answer(chosenId);
     save();
-    showScoreDelta(currentId, Math.min(game.cards[currentId].streak, STREAK_TO_LONG) - stepsBefore, correct);
+    showScoreDelta(currentId, game.stepsOf(currentId) - stepsBefore, correct);
 
     const buttons = [...document.querySelectorAll('.name-btn')];
     buttons.forEach((b) => { b.disabled = true; });
@@ -350,7 +368,7 @@
 
   function startNewGame() {
     clearTimeout(nextTimer);
-    game = new MemoryGame(GROUP.members.map((m) => m.id));
+    game = new MemoryGame(GROUP.members.map((m) => m.id), Math.random, stepsPerLevel());
     elapsedMs = 0;
     save();
     show('game');
@@ -359,7 +377,7 @@
 
   function resumeGame(data) {
     clearTimeout(nextTimer);
-    game = MemoryGame.fromJSON(data.game);
+    game = MemoryGame.fromJSON(data.game, Math.random, stepsPerLevel());
     elapsedMs = data.elapsedMs || 0;
     show('game');
     renderQuestion();
@@ -392,6 +410,9 @@
     document.querySelectorAll('input[name="score-mode"]').forEach((r) => {
       r.checked = r.value === prefs.scoreMode;
     });
+    document.querySelectorAll('input[name="difficulty"]').forEach((r) => {
+      r.checked = r.value === prefs.difficulty;
+    });
     settingsDialog.showModal();
   }
 
@@ -406,14 +427,20 @@
     });
   });
 
+  document.querySelectorAll('input[name="difficulty"]').forEach((r) => {
+    r.addEventListener('change', () => {
+      prefs.difficulty = r.value;
+      savePrefs();
+      applyDifficulty();
+    });
+  });
+
   // Clic sur le fond = fermer
   settingsDialog.addEventListener('click', (e) => {
     if (e.target === settingsDialog) settingsDialog.close();
   });
 
-  // Graduations du curseur : une par étape, quel que soit le nombre de membres
-  $('.victory-track').style.setProperty('--steps', GROUP.members.length * STREAK_TO_LONG);
-
+  applyDifficulty();
   applyScoreMode();
   renderHome();
   show('home');

@@ -30,8 +30,9 @@
       <p>Une photo s'affiche : <strong>touche le bon nom</strong>. Chaque membre voyage
       entre trois mémoires : <span class="dot dot-short"></span> courte,
       <span class="dot dot-medium"></span> moyenne et <span class="dot dot-long"></span> longue.
-      Une erreur le fait revenir très vite ; trois bonnes réponses d'affilée l'envoient en
-      mémoire longue. Quand tous les membres y sont, c'est gagné !</p>
+      Une erreur le fait revenir très vite ; les bonnes réponses d'affilée le font monter
+      (1, 2 ou 3 par niveau selon la difficulté, réglable via ⚙). Quand tous les membres
+      sont en mémoire longue, c'est gagné !</p>
     </details>
   </section>
 
@@ -82,6 +83,22 @@
   <!-- Réglages -->
   <dialog id="settings-dialog">
     <h3>Réglages</h3>
+    <p class="dialog-sub">Difficulté</p>
+    <div class="difficulty-row">
+      <label class="diff-option">
+        <input type="radio" name="difficulty" value="facile">
+        <span><strong>Facile</strong><small>1 par niveau</small></span>
+      </label>
+      <label class="diff-option">
+        <input type="radio" name="difficulty" value="moyen">
+        <span><strong>Moyen</strong><small>2 par niveau</small></span>
+      </label>
+      <label class="diff-option">
+        <input type="radio" name="difficulty" value="difficile">
+        <span><strong>Difficile</strong><small>3 par niveau</small></span>
+      </label>
+    </div>
+    <p class="dialog-hint">Nombre de bonnes réponses d'affilée pour monter d'un niveau de mémoire.</p>
     <p class="dialog-sub">Affichage du score</p>
     <label class="mode-option">
       <input type="radio" name="score-mode" value="global">
