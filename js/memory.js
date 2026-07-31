@@ -50,6 +50,15 @@ class MemoryGame {
     return Object.values(this.cards).every((c) => c.box === BOX.LONG);
   }
 
+  // Progression vers la victoire, entre 0 et 1 : chaque membre doit atteindre
+  // STREAK_TO_LONG réussites d'affilée, donc 100 % = nb membres x STREAK_TO_LONG étapes.
+  // Une erreur remet la série du membre à zéro : le curseur redescend d'autant.
+  progress() {
+    const cards = Object.values(this.cards);
+    const done = cards.reduce((sum, c) => sum + Math.min(c.streak, STREAK_TO_LONG), 0);
+    return done / (cards.length * STREAK_TO_LONG);
+  }
+
   // Enregistre la réponse pour la carte courante et replanifie sa prochaine apparition.
   // Renvoie { correct, card } pour piloter le feedback UI.
   answer(chosenId) {

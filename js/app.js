@@ -110,7 +110,14 @@
 
   // ---------- Écran jeu ----------
 
+  function renderVictoryMeter() {
+    const pct = Math.round(game.progress() * 100);
+    $('#victory-fill').style.width = pct + '%';
+    $('#victory-pct').textContent = pct + '%';
+  }
+
   function renderTokens() {
+    renderVictoryMeter();
     const box = $('#progress-tokens');
     GROUP.members.forEach((m, i) => {
       let token = box.children[i];

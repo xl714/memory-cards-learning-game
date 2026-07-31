@@ -197,6 +197,39 @@ body {
 .token.box-2 { background: var(--long); box-shadow: 0 0 8px rgba(52, 211, 153, 0.7); }
 .token.bump { transform: scale(1.5); }
 
+/* ===== Curseur de victoire ===== */
+.victory-meter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.victory-track {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--bg-soft);
+  overflow: hidden;
+}
+
+.victory-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent-strong), var(--accent), var(--long));
+  transition: width 0.5s ease;
+}
+
+.victory-pct {
+  min-width: 42px;
+  text-align: right;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
 .photo-zone {
   flex: 1;
   display: flex;

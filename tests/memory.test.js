@@ -83,6 +83,23 @@ const rnd0 = () => 0;
   }
 }
 
+// --- Progression vers la victoire : 100 % = nb membres x 3 étapes, une erreur fait redescendre
+{
+  const g = new MemoryGame(IDS, rnd0);
+  assert.strictEqual(g.progress(), 0);
+  const first = g.current();
+  g.answer(first); // 1 réussite sur 21 étapes
+  assert.ok(Math.abs(g.progress() - 1 / 21) < 1e-9);
+  while (g.current() !== first) g.answer(g.current());
+  const before = g.progress();
+  g.answer('WRONG'); // la série de `first` retombe à 0 : le curseur redescend
+  assert.ok(g.progress() < before);
+  // Partie parfaite : la progression finit à 100 %
+  const g2 = new MemoryGame(IDS);
+  while (!g2.isWon()) g2.answer(g2.current());
+  assert.strictEqual(g2.progress(), 1);
+}
+
 // --- Sérialisation / reprise
 {
   const g = new MemoryGame(IDS, rnd0);
