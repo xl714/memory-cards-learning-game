@@ -482,6 +482,21 @@ dialog form { text-align: center; margin-top: 8px; }
   background: linear-gradient(160deg, #1d2a4d 0%, var(--bg-soft) 90%);
 }
 
+.math-op.hangul { font-size: 68px; letter-spacing: 8px; }
+
+/* Pastille de score des cartes intercalées : « 🧮 3/4 » ou « 한 3/4 » */
+.filler-score {
+  align-self: flex-end;
+  font-size: 13px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-dim);
+  background: var(--bg-soft);
+  border-radius: 999px;
+  padding: 3px 12px;
+  margin-top: 6px;
+}
+
 .photo-card.slide-in { animation: slide-in 0.3s ease both; }
 .photo-card.shake { animation: shake 0.45s ease; }
 

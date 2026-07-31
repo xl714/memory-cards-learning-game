@@ -56,6 +56,9 @@
     <!-- Mode 2 : une barre verticale par membre, photo en dessous -->
     <div id="member-bars" class="member-bars hidden" aria-label="Score par membre"></div>
 
+    <!-- Score des cartes intercalées (calculs / hangul) -->
+    <div id="filler-score" class="filler-score hidden" aria-label="Score des cartes intercalées"></div>
+
     <div class="photo-zone">
       <div id="photo-card" class="photo-card" aria-label="Qui est-ce ?"></div>
       <p class="prompt">Qui est-ce ?</p>
@@ -76,6 +79,7 @@
         <div><dt>Questions</dt><dd id="stat-asked">0</dd></div>
         <div><dt>Précision</dt><dd id="stat-accuracy">0%</dd></div>
         <div><dt>Temps</dt><dd id="stat-time">0:00</dd></div>
+        <div id="stat-filler-wrap" class="hidden"><dt id="stat-filler-label">Calculs</dt><dd id="stat-filler">0/0</dd></div>
       </dl>
       <button id="btn-replay" class="btn btn-primary">Rejouer</button>
     </div>
@@ -101,6 +105,17 @@
     </div>
     <p class="dialog-hint">Nombre de bonnes réponses d'affilée pour compléter chaque niveau de mémoire —
     3 niveaux (courte, moyenne, longue), donc des jauges de 3, 6 ou 9 crans.</p>
+    <p class="dialog-sub">Cartes intercalées</p>
+    <label class="mode-option">
+      <input type="radio" name="filler-type" value="math">
+      <span><strong>Calcul mental</strong>
+      <small>Additions, soustractions et multiplications rapides.</small></span>
+    </label>
+    <label class="mode-option">
+      <input type="radio" name="filler-type" value="hangul">
+      <span><strong>Nom coréen</strong>
+      <small>Un nom s'affiche en hangul : retrouve quel membre s'écrit ainsi.</small></span>
+    </label>
     <p class="dialog-sub">Affichage du score</p>
     <label class="mode-option">
       <input type="radio" name="score-mode" value="global">

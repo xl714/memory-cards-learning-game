@@ -26,10 +26,17 @@
   // Préférences (persistées) :
   //  - scoreMode : 'global' (barre unique + jetons) ou 'perMember' (une barre par membre)
   //  - difficulty : bonnes réponses consécutives par niveau de mémoire
+  //  - fillerType : type des cartes intercalées ('math' ou 'hangul')
   const SPL = { facile: 1, moyen: 2, difficile: 3 };
-  const prefs = { scoreMode: 'global', difficulty: 'moyen' };
+  const prefs = { scoreMode: 'global', difficulty: 'moyen', fillerType: 'math' };
   try { Object.assign(prefs, JSON.parse(localStorage.getItem(PREFS_KEY)) || {}); } catch (e) { /* défauts */ }
   if (!SPL[prefs.difficulty]) prefs.difficulty = 'moyen';
+  if (!['math', 'hangul'].includes(prefs.fillerType)) prefs.fillerType = 'math';
+
+  // Le mode hangul exige des noms coréens dans les données ; sinon on retombe sur les calculs.
+  function fillerType() {
+    return prefs.fillerType === 'hangul' && GROUP.members.some((m) => m.hangul) ? 'hangul' : 'math';
+  }
 
   function stepsPerLevel() {
     return SPL[prefs.difficulty];
@@ -250,6 +257,7 @@
   function renderTokens() {
     renderVictoryMeter();
     renderMemberBars();
+    renderFillerScore();
     const box = $('#progress-tokens');
     GROUP.members.forEach((m, i) => {
       let token = box.children[i];
@@ -272,7 +280,7 @@
     renderTokens();
 
     if (game.nextIsFiller()) {
-      renderMathQuestion();
+      renderFillerQuestion();
       return;
     }
 
@@ -302,7 +310,19 @@
     turnStart = Date.now();
   }
 
-  // ---------- Cartes d'interférence (mini-calculs) ----------
+  // ---------- Cartes d'interférence (calculs ou hangul) ----------
+
+  // Pastille « 🧮 3/4 » près du score : réussites aux cartes intercalées
+  function renderFillerScore() {
+    const el = $('#filler-score');
+    const asked = game && (game.stats.fillerAsked || 0);
+    if (!asked) {
+      el.classList.add('hidden');
+      return;
+    }
+    el.classList.remove('hidden');
+    el.textContent = `${fillerType() === 'hangul' ? '한' : '🧮'} ${game.stats.fillerCorrect || 0}/${asked}`;
+  }
 
   function makeMathQuestion() {
     const r = (n) => Math.floor(Math.random() * n);
@@ -317,32 +337,50 @@
       const offset = (1 + r(4)) * (r(2) ? 1 : -1);
       if (q.answer + offset >= 0) choices.add(q.answer + offset);
     }
-    q.choices = shuffled([...choices]);
-    return q;
+    return {
+      display: q.text,
+      prompt: 'Petit calcul !',
+      answer: String(q.answer),
+      choices: shuffled([...choices].map(String)),
+      hangul: false,
+    };
+  }
+
+  // Un nom du groupe écrit en hangul : retrouver quel membre s'écrit ainsi.
+  function makeHangulQuestion() {
+    const candidates = GROUP.members.filter((m) => m.hangul);
+    const target = candidates[Math.floor(Math.random() * candidates.length)];
+    return {
+      display: target.hangul,
+      prompt: 'Quel est ce nom ?',
+      answer: target.name,
+      choices: shuffled(GROUP.members.map((m) => m.name)),
+      hangul: true,
+    };
   }
 
   // Question d'interférence : occupe la mémoire entre deux passages d'un visage.
   // Sans effet sur les jauges — c'est l'espacement qui compte.
-  function renderMathQuestion() {
-    const q = makeMathQuestion();
+  function renderFillerQuestion() {
+    const q = fillerType() === 'hangul' ? makeHangulQuestion() : makeMathQuestion();
 
     const card = $('#photo-card');
     card.classList.remove('slide-in', 'shake');
     void card.offsetWidth;
     card.classList.add('slide-in', 'math');
     const op = document.createElement('div');
-    op.className = 'math-op';
-    op.textContent = q.text;
+    op.className = 'math-op' + (q.hangul ? ' hangul' : '');
+    op.textContent = q.display;
     card.replaceChildren(op);
-    $('.prompt').textContent = 'Petit calcul !';
+    $('.prompt').textContent = q.prompt;
 
     const grid = $('#names-grid');
     grid.replaceChildren();
-    q.choices.forEach((n) => {
+    q.choices.forEach((label) => {
       const btn = document.createElement('button');
       btn.className = 'name-btn';
-      btn.textContent = n;
-      btn.addEventListener('click', () => onMathAnswer(n, q.answer));
+      btn.textContent = label;
+      btn.addEventListener('click', () => onFillerAnswer(label, q.answer));
       grid.appendChild(btn);
     });
 
@@ -350,19 +388,20 @@
     turnStart = Date.now();
   }
 
-  function onMathAnswer(value, expected) {
+  function onFillerAnswer(chosen, expected) {
     if (locked) return;
     locked = true;
 
     elapsedMs += Math.min(Date.now() - turnStart, MAX_TURN_MS);
-    const correct = value === expected;
+    const correct = chosen === expected;
     game.resolveFiller(correct);
     save();
+    renderFillerScore();
 
     const buttons = [...document.querySelectorAll('.name-btn')];
     buttons.forEach((b) => { b.disabled = true; });
-    const chosenBtn = buttons.find((b) => Number(b.textContent) === value);
-    const correctBtn = buttons.find((b) => Number(b.textContent) === expected);
+    const chosenBtn = buttons.find((b) => b.textContent === chosen);
+    const correctBtn = buttons.find((b) => b.textContent === expected);
 
     stamp(correct ? 'ok' : 'ko');
     if (correct) {
@@ -434,12 +473,17 @@
   }
 
   function showWin() {
-    const { asked, correct } = game.stats;
+    const { asked, correct, fillerAsked, fillerCorrect } = game.stats;
     $('#win-text').innerHTML =
       `Les ${GROUP.members.length} membres de <strong>${GROUP.name}</strong> sont ancrés en mémoire long terme.`;
     $('#stat-asked').textContent = asked;
     $('#stat-accuracy').textContent = Math.round((correct / asked) * 100) + '%';
     $('#stat-time').textContent = formatTime(elapsedMs);
+    $('#stat-filler-wrap').classList.toggle('hidden', !fillerAsked);
+    if (fillerAsked) {
+      $('#stat-filler-label').textContent = fillerType() === 'hangul' ? 'Hangul' : 'Calculs';
+      $('#stat-filler').textContent = `${fillerCorrect || 0}/${fillerAsked}`;
+    }
     clearSave();
     show('win');
   }
@@ -493,6 +537,9 @@
     document.querySelectorAll('input[name="difficulty"]').forEach((r) => {
       r.checked = r.value === prefs.difficulty;
     });
+    document.querySelectorAll('input[name="filler-type"]').forEach((r) => {
+      r.checked = r.value === prefs.fillerType;
+    });
     settingsDialog.showModal();
   }
 
@@ -512,6 +559,14 @@
       prefs.difficulty = r.value;
       savePrefs();
       applyDifficulty();
+    });
+  });
+
+  document.querySelectorAll('input[name="filler-type"]').forEach((r) => {
+    r.addEventListener('change', () => {
+      prefs.fillerType = r.value;
+      savePrefs();
+      if (game) renderFillerScore(); // met à jour l'icône de la pastille
     });
   });
 
