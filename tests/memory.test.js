@@ -17,18 +17,20 @@ const rnd0 = () => 0;
   assert.strictEqual(g.queue.indexOf(first), 2, 'une carte ratée revient en position 2');
 }
 
-// --- Les seuils suivent la difficulté : facile 1/niveau, moyen 2, difficile 3
+// --- Les seuils suivent la difficulté : chaque niveau se complète en spl réussites,
+//     jauge de 3 x spl crans (la mémoire longue doit aussi être complétée)
 {
-  for (const [spl, toMedium, toLong] of [[1, 1, 2], [2, 2, 4], [3, 3, 6]]) {
+  for (const [spl, toMedium, toLong, master] of [[1, 1, 2, 3], [2, 2, 4, 6], [3, 3, 6, 9]]) {
     const g = new MemoryGame(['x'], rnd0, spl);
-    assert.strictEqual(g.streakToLong, toLong);
-    for (let i = 0; i < toLong; i++) {
+    assert.strictEqual(g.masterStreak, master, `jauge de ${master} crans pour spl=${spl}`);
+    for (let i = 0; i < master; i++) {
       const expected = i >= toLong ? BOX.LONG : i >= toMedium ? BOX.MEDIUM : BOX.SHORT;
       assert.strictEqual(g.boxOf('x'), expected, `spl=${spl}, streak=${i}`);
+      assert.strictEqual(g.isWon(), false, `spl=${spl}, streak=${i} : pas encore gagné`);
       g.answer('x');
     }
-    assert.strictEqual(g.boxOf('x'), BOX.LONG, `spl=${spl} : longue après ${toLong} réussites`);
-    assert.ok(g.isWon());
+    assert.strictEqual(g.boxOf('x'), BOX.LONG);
+    assert.ok(g.isWon(), `spl=${spl} : gagné après ${master} réussites (jauge pleine)`);
   }
 }
 
@@ -56,24 +58,29 @@ const rnd0 = () => 0;
 {
   const g = new MemoryGame(['x', 'y'], rnd0, 3); // difficile
   g.cards.x.streak = 2;
-  // streak 2 : encore courte en difficile (seuil 3)…
+  // streak 2 : encore courte en difficile (niveau complété à 3)…
   assert.strictEqual(g.boxOf('x'), BOX.SHORT);
-  g.setStepsPerLevel(1); // …mais longue en facile (jauge de 2)
+  g.setStepsPerLevel(1); // …mais longue en facile (longue atteinte à 2, complétée à 3)
   assert.strictEqual(g.boxOf('x'), BOX.LONG);
-  g.setStepsPerLevel(2); // et moyenne en moyen (seuil 2, jauge de 4)
+  assert.strictEqual(g.isWon(), false, 'longue atteinte mais pas complétée');
+  g.cards.x.streak = 3;
+  g.cards.y.streak = 3;
+  assert.ok(g.isWon(), 'jauges pleines en facile (3 crans)');
+  g.setStepsPerLevel(2); // en moyen (longue atteinte à 4) : streak 3 => encore moyenne
   assert.strictEqual(g.boxOf('x'), BOX.MEDIUM);
+  assert.strictEqual(g.isWon(), false);
 }
 
 // --- Victoire : tout juste => partie gagnée, en un nombre de tours plausible
 {
-  for (const [spl, minTurns] of [[1, 14], [2, 28], [3, 42]]) {
+  for (const [spl, minTurns] of [[1, 21], [2, 42], [3, 63]]) {
     const g = new MemoryGame(IDS, Math.random, spl);
     let turns = 0;
     while (!g.isWon()) {
-      assert.ok(++turns < 700, `la partie (spl=${spl}) doit converger`);
+      assert.ok(++turns < 900, `la partie (spl=${spl}) doit converger`);
       g.answer(g.current());
     }
-    assert.ok(turns >= minTurns, `minimum théorique ${minTurns} pour spl=${spl} (obtenu : ${turns})`);
+    assert.ok(turns >= minTurns, `minimum théorique 7 x ${3 * spl} = ${minTurns} pour spl=${spl} (obtenu : ${turns})`);
     assert.strictEqual(g.progress(), 1);
     assert.strictEqual(g.stats.wrong, 0);
   }
@@ -81,11 +88,11 @@ const rnd0 = () => 0;
 
 // --- Progression : chaque réussite consécutive vaut 1/(membres x jauge), une erreur redescend
 {
-  const g = new MemoryGame(IDS, rnd0); // moyen : jauge de 4
+  const g = new MemoryGame(IDS, rnd0); // moyen : jauge de 6
   assert.strictEqual(g.progress(), 0);
   const first = g.current();
   g.answer(first);
-  assert.ok(Math.abs(g.progress() - 1 / (7 * 4)) < 1e-9);
+  assert.ok(Math.abs(g.progress() - 1 / (7 * 6)) < 1e-9);
   while (g.current() !== first) g.answer(g.current());
   const before = g.progress();
   g.answer('WRONG');
@@ -100,7 +107,7 @@ const rnd0 = () => 0;
     assert.ok(++turns < 300, 'la partie à 4 doit converger');
     g.answer(g.current());
   }
-  assert.ok(turns >= 8, `minimum théorique 4 x 2 = 8 (obtenu : ${turns})`);
+  assert.ok(turns >= 12, `minimum théorique 4 x 3 = 12 (obtenu : ${turns})`);
 }
 
 // --- Jamais deux fois la même carte de suite (sur une partie chaotique)
@@ -124,7 +131,7 @@ const rnd0 = () => 0;
   assert.deepStrictEqual(restored.queue, g.queue);
   assert.deepStrictEqual(restored.stats, g.stats);
   assert.strictEqual(restored.current(), g.current());
-  assert.strictEqual(restored.streakToLong, 6);
+  assert.strictEqual(restored.masterStreak, 9);
 }
 
 console.log('✔ tous les tests du moteur passent');

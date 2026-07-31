@@ -27,12 +27,12 @@
     </div>
     <details class="rules">
       <summary>Comment ça marche ?</summary>
-      <p>Une photo s'affiche : <strong>touche le bon nom</strong>. Chaque membre voyage
-      entre trois mémoires : <span class="dot dot-short"></span> courte,
-      <span class="dot dot-medium"></span> moyenne et <span class="dot dot-long"></span> longue.
-      Une erreur le fait revenir très vite ; les bonnes réponses d'affilée le font monter
-      (1, 2 ou 3 par niveau selon la difficulté, réglable via ⚙). Quand tous les membres
-      sont en mémoire longue, c'est gagné !</p>
+      <p>Une photo s'affiche : <strong>touche le bon nom</strong>. Chaque membre traverse
+      trois niveaux de mémoire : <span class="dot dot-short"></span> courte,
+      <span class="dot dot-medium"></span> moyenne puis <span class="dot dot-long"></span> longue —
+      chacun se complète par 1, 2 ou 3 bonnes réponses d'affilée selon la difficulté (⚙),
+      la longue lors de contrôles espacés. Une erreur ramène le membre en mémoire courte.
+      Quand toutes les jauges sont pleines, c'est gagné !</p>
     </details>
   </section>
 
@@ -98,7 +98,8 @@
         <span><strong>Difficile</strong><small>3 par niveau</small></span>
       </label>
     </div>
-    <p class="dialog-hint">Nombre de bonnes réponses d'affilée pour monter d'un niveau de mémoire.</p>
+    <p class="dialog-hint">Nombre de bonnes réponses d'affilée pour compléter chaque niveau de mémoire —
+    3 niveaux (courte, moyenne, longue), donc des jauges de 3, 6 ou 9 crans.</p>
     <p class="dialog-sub">Affichage du score</p>
     <label class="mode-option">
       <input type="radio" name="score-mode" value="global">

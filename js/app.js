@@ -48,7 +48,7 @@
   // Applique la difficulté aux graduations et à la partie en cours (les séries
   // restent, seuls les seuils bougent — la partie peut même devenir gagnée).
   function applyDifficulty() {
-    const total = SPL[prefs.difficulty] * 2; // crans d'une jauge (2 niveaux à monter)
+    const total = SPL[prefs.difficulty] * MEMORY_LEVELS; // crans d'une jauge (3 niveaux à compléter)
     $('.victory-track').style.setProperty('--steps', GROUP.members.length * total);
     $('#member-bars').style.setProperty('--bar-steps', total);
     if (game) {
@@ -161,7 +161,7 @@
   //  - mode par membre : la barre du membre concerné rebondit, et flashe en rouge s'il régresse.
   function showScoreDelta(memberId, deltaSteps, correct) {
     if (prefs.scoreMode !== 'perMember') {
-      if (deltaSteps !== 0) showVictoryDelta(deltaSteps / (GROUP.members.length * game.streakToLong));
+      if (deltaSteps !== 0) showVictoryDelta(deltaSteps / (GROUP.members.length * game.masterStreak));
       return;
     }
     const idx = GROUP.members.findIndex((m) => m.id === memberId);
@@ -239,7 +239,7 @@
       }
       const box = game.boxOf(m.id);
       const fill = bar.querySelector('.mbar-fill');
-      fill.style.height = (game.stepsOf(m.id) / game.streakToLong) * 100 + '%';
+      fill.style.height = (game.stepsOf(m.id) / game.masterStreak) * 100 + '%';
       fill.classList.remove('box-1', 'box-2');
       if (box > 0) fill.classList.add('box-' + box);
     });
@@ -356,7 +356,7 @@
   function showWin() {
     const { asked, correct } = game.stats;
     $('#win-text').innerHTML =
-      `Les ${GROUP.members.length} membres de <strong>${GROUP.name}</strong> sont en mémoire long terme.`;
+      `Les ${GROUP.members.length} membres de <strong>${GROUP.name}</strong> sont ancrés en mémoire long terme.`;
     $('#stat-asked').textContent = asked;
     $('#stat-accuracy').textContent = Math.round((correct / asked) * 100) + '%';
     $('#stat-time').textContent = formatTime(elapsedMs);
