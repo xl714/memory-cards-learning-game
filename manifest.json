@@ -1,8 +1,8 @@
 {
   "name": "Idol Memory — NEBULA",
   "short_name": "Idol Memory",
-  "description": "Apprends les noms des membres du groupe NEBULA par répétition espacée.",
-  "lang": "fr",
+  "description": "Learn the names of the NEBULA members through spaced repetition.",
+  "lang": "en",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

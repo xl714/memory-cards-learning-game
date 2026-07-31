@@ -1,16 +1,16 @@
-// Orchestration UI : écrans, rendu des questions, feedback OK/KO, stats, persistance.
+// UI orchestration: screens, question rendering, OK/KO feedback, stats, persistence.
 (function () {
   'use strict';
 
   const SAVE_KEY = 'idol-memory-save-v1';
   const PREFS_KEY = 'idol-memory-prefs-v1';
   const FEEDBACK_MS_OK = 900;
-  const FEEDBACK_MS_KO = 1700; // plus long : on laisse le temps de voir la bonne réponse
-  const FEEDBACK_MS_MATH_OK = 600;  // les calculs s'enchaînent plus vite
+  const FEEDBACK_MS_KO = 1700; // longer: leaves time to see the correct answer
+  const FEEDBACK_MS_MATH_OK = 600;  // math cards chain faster
   const FEEDBACK_MS_MATH_KO = 1200;
-  const FEEDBACK_MS_HANGUL_OK = 1000; // le temps de lire la romanisation révélée
+  const FEEDBACK_MS_HANGUL_OK = 1000; // time to read the revealed romanization
   const FEEDBACK_MS_HANGUL_KO = 1600;
-  const MAX_TURN_MS = 30000;   // au-delà, le temps d'une question n'est plus compté (joueur AFK)
+  const MAX_TURN_MS = 30000;   // beyond this, question time is no longer counted (AFK player)
 
   const $ = (sel) => document.querySelector(sel);
   const screens = {
@@ -22,20 +22,20 @@
   let game = null;
   let elapsedMs = 0;
   let turnStart = 0;
-  let locked = false;   // bloque les clics pendant le feedback
-  let nextTimer = null; // timeout vers la question suivante (annulé si on quitte/relance)
+  let locked = false;   // blocks clicks during feedback
+  let nextTimer = null; // timeout to the next question (cancelled on quit/restart)
 
-  // Préférences (persistées) :
-  //  - scoreMode : 'global' (barre unique + jetons) ou 'perMember' (une barre par membre)
-  //  - difficulty : bonnes réponses consécutives par niveau de mémoire
-  //  - fillerType : type des cartes intercalées ('math' ou 'hangul')
+  // Preferences (persisted):
+  //  - scoreMode: 'global' (single bar + tokens) or 'perMember' (one bar per member)
+  //  - difficulty: consecutive correct answers per memory level
+  //  - fillerType: interleaved-card type ('math' or 'hangul')
   const SPL = { facile: 1, moyen: 2, difficile: 3 };
   const prefs = { scoreMode: 'global', difficulty: 'moyen', fillerType: 'math' };
-  try { Object.assign(prefs, JSON.parse(localStorage.getItem(PREFS_KEY)) || {}); } catch (e) { /* défauts */ }
+  try { Object.assign(prefs, JSON.parse(localStorage.getItem(PREFS_KEY)) || {}); } catch (e) { /* defaults */ }
   if (!SPL[prefs.difficulty]) prefs.difficulty = 'moyen';
   if (!['math', 'hangul'].includes(prefs.fillerType)) prefs.fillerType = 'math';
 
-  // Le mode hangul exige des noms coréens dans les données ; sinon on retombe sur les calculs.
+  // Hangul mode requires Korean names in the data; otherwise fall back to math.
   function fillerType() {
     return prefs.fillerType === 'hangul' && GROUP.members.some((m) => m.hangul) ? 'hangul' : 'math';
   }
@@ -56,10 +56,10 @@
     if (game) renderTokens();
   }
 
-  // Applique la difficulté aux graduations et à la partie en cours (les séries
-  // restent, seuls les seuils bougent — la partie peut même devenir gagnée).
+  // Applies the difficulty to the graduations and the ongoing game (streaks
+  // stay, only thresholds move — the game may even become won).
   function applyDifficulty() {
-    const total = SPL[prefs.difficulty] * MEMORY_LEVELS; // crans d'une jauge (3 niveaux à compléter)
+    const total = SPL[prefs.difficulty] * MEMORY_LEVELS; // steps in a gauge (3 levels to complete)
     $('.victory-track').style.setProperty('--steps', GROUP.members.length * total);
     $('#member-bars').style.setProperty('--bar-steps', total);
     if (game) {
@@ -85,7 +85,7 @@
     return `hsl(${h}, 60%, 45%)`;
   }
 
-  // Portrait avec avatar de secours (initiale colorée) si l'image ne charge pas.
+  // Portrait with a fallback avatar (colored initial) when the image fails to load.
   function makePortrait(member) {
     const wrap = document.createElement('div');
     wrap.className = 'portrait';
@@ -116,7 +116,7 @@
   function save() {
     try {
       localStorage.setItem(SAVE_KEY, JSON.stringify({ game: game.toJSON(), elapsedMs }));
-    } catch (e) { /* stockage indisponible : le jeu reste jouable sans sauvegarde */ }
+    } catch (e) { /* storage unavailable: the game stays playable without saving */ }
   }
 
   function clearSave() {
@@ -128,7 +128,7 @@
       const raw = localStorage.getItem(SAVE_KEY);
       if (!raw) return null;
       const data = JSON.parse(raw);
-      // La sauvegarde doit correspondre aux membres actuels du groupe.
+      // The save must match the current group members.
       const ids = Object.keys(data.game.cards).sort().join(',');
       const expected = GROUP.members.map((m) => m.id).sort().join(',');
       if (ids !== expected) return null;
@@ -138,11 +138,11 @@
     }
   }
 
-  // ---------- Écran accueil ----------
+  // ---------- Home screen ----------
 
   function renderHome() {
     $('#group-logo').textContent = GROUP.name;
-    $('.tagline').textContent = `Apprends à reconnaître les ${GROUP.members.length} membres !`;
+    $('.tagline').textContent = `Learn to recognize all ${GROUP.members.length} members!`;
     const grid = $('#study-grid');
     grid.replaceChildren();
     GROUP.members.forEach((m, i) => {
@@ -159,7 +159,7 @@
     $('#btn-resume').classList.toggle('hidden', loadSave() === null);
   }
 
-  // ---------- Écran jeu ----------
+  // ---------- Game screen ----------
 
   function renderVictoryMeter() {
     const pct = Math.round(game.progress() * 100);
@@ -167,9 +167,9 @@
     $('#victory-pct').textContent = pct + '%';
   }
 
-  // Rend la progression/régression visible, selon le mode d'affichage :
-  //  - mode global : chip « +8,3 % » vert / « -X % » rouge + flash rouge de la barre ;
-  //  - mode par membre : la barre du membre concerné rebondit, et flashe en rouge s'il régresse.
+  // Makes progress/regression visible, depending on the score display mode:
+  //  - global mode: green '+8.3%' / red '-X%' chip + red flash of the bar;
+  //  - per-member mode: the member's bar bounces, and flashes red on regression.
   function showScoreDelta(memberId, deltaSteps, correct) {
     if (prefs.scoreMode !== 'perMember') {
       if (deltaSteps !== 0) showVictoryDelta(deltaSteps / (GROUP.members.length * game.masterStreak));
@@ -180,7 +180,7 @@
     if (!bar) return;
     const fill = bar.querySelector('.mbar-fill');
 
-    // Barre déjà pleine (mémoire longue) et contrôle réussi : halo vert, la jauge ne peut plus monter.
+    // Gauge already full (long-term memory) and a passed check-up: green glow, it cannot rise further.
     if (deltaSteps === 0) {
       if (correct) {
         fill.classList.add('gain-glow');
@@ -190,10 +190,10 @@
     }
 
     bar.classList.remove('bump');
-    void bar.offsetWidth; // relance l'animation
+    void bar.offsetWidth; // restarts the animation
     bar.classList.add('bump');
 
-    // Badge « +1 » / « -N » qui s'envole au-dessus de la barre du membre
+    // '+1' / '-N' badge flying up above the member's bar
     let badge = bar.querySelector('.mbar-badge');
     if (!badge) {
       badge = document.createElement('span');
@@ -218,10 +218,10 @@
   function showVictoryDelta(delta) {
     if (delta === 0) return;
     const chip = $('#victory-delta');
-    const signed = (delta > 0 ? '+' : '−') + (Math.abs(delta) * 100).toFixed(1).replace('.', ',') + ' %';
+    const signed = (delta > 0 ? '+' : '−') + (Math.abs(delta) * 100).toFixed(1) + '%';
     chip.textContent = signed;
     chip.className = 'victory-delta ' + (delta > 0 ? 'gain' : 'loss');
-    void chip.offsetWidth; // relance l'animation
+    void chip.offsetWidth; // restarts the animation
     chip.classList.add('show');
     if (delta < 0) {
       const fill = $('#victory-fill');
@@ -230,8 +230,8 @@
     }
   }
 
-  // Mode 2 : une barre verticale par membre — le remplissage monte d'un cran (1/3)
-  // par bonne réponse consécutive, coloré selon la mémoire atteinte.
+  // Mode 2: one vertical bar per member — the fill climbs one step per
+  // consecutive correct answer, colored by the memory level reached.
   function renderMemberBars() {
     const wrap = $('#member-bars');
     GROUP.members.forEach((m, i) => {
@@ -288,15 +288,15 @@
 
     const member = membersById[game.current()];
 
-    // Photo courante (avec animation d'entrée)
+    // Current photo (with entrance animation)
     const card = $('#photo-card');
     card.classList.remove('slide-in', 'shake', 'math');
-    void card.offsetWidth; // relance l'animation
+    void card.offsetWidth; // restarts the animation
     card.classList.add('slide-in');
     card.replaceChildren(makePortrait(member));
-    $('.prompt').textContent = 'Qui est-ce ?';
+    $('.prompt').textContent = 'Who is this?';
 
-    // Noms mélangés à chaque question (anti-mémorisation spatiale)
+    // Names shuffled on every question (prevents spatial memorization)
     const grid = $('#names-grid');
     grid.replaceChildren();
     shuffled(GROUP.members).forEach((m) => {
@@ -312,9 +312,9 @@
     turnStart = Date.now();
   }
 
-  // ---------- Cartes d'interférence (calculs ou hangul) ----------
+  // ---------- Interference cards (math or hangul) ----------
 
-  // Pastille « 🧮 3/4 » près du score : réussites aux cartes intercalées
+  // '🧮 3/4' pill next to the score: correct answers on interleaved cards
   function renderFillerScore() {
     const el = $('#filler-score');
     const asked = game && (game.stats.fillerAsked || 0);
@@ -344,30 +344,30 @@
     }
     return {
       display: q.text,
-      prompt: 'Petit calcul !',
+      prompt: 'Quick math!',
       answer: String(q.answer),
       choices: shuffled([...choices].map(String)),
       hangul: false,
     };
   }
 
-  // Un nom du groupe écrit en hangul : retrouver quel membre s'écrit ainsi.
+  // A group name written in hangul: find which member spells that way.
   function makeHangulQuestion() {
     const candidates = GROUP.members.filter((m) => m.hangul);
     const target = candidates[Math.floor(Math.random() * candidates.length)];
     return {
       display: target.hangul,
-      prompt: 'Quel est ce nom ?',
+      prompt: 'Whose name is this?',
       answer: target.name,
       choices: shuffled(GROUP.members.map((m) => m.name)),
       hangul: true,
-      // Révélée seulement avec la réponse : l'afficher pendant la question trahirait le nom.
+      // Revealed only with the answer: showing it during the question would give the name away.
       romaja: target.romaja || target.name.toLowerCase(),
     };
   }
 
-  // Question d'interférence : occupe la mémoire entre deux passages d'un visage.
-  // Sans effet sur les jauges — c'est l'espacement qui compte.
+  // Interference question: keeps memory busy between two sightings of a face.
+  // No effect on the gauges — the spacing is what matters.
   function renderFillerQuestion() {
     const q = fillerType() === 'hangul' ? makeHangulQuestion() : makeMathQuestion();
 
@@ -405,7 +405,7 @@
     save();
     renderFillerScore();
 
-    // Avec la réponse, on révèle la lecture du hangul (en italique sous le nom)
+    // Along with the answer, reveal how the hangul reads (italic below the name)
     if (q.hangul) {
       const romaja = document.createElement('em');
       romaja.className = 'romaja';
@@ -466,7 +466,7 @@
       chosenBtn.classList.add('correct');
     } else {
       chosenBtn.classList.add('wrong');
-      // Pédagogie : on montre la bonne réponse avant de passer à la suite
+      // Pedagogy: show the correct answer before moving on
       correctBtn.classList.add('correct', 'reveal');
       $('#photo-card').classList.add('shake');
     }
@@ -480,7 +480,7 @@
     }, correct ? FEEDBACK_MS_OK : FEEDBACK_MS_KO);
   }
 
-  // ---------- Écran victoire ----------
+  // ---------- Victory screen ----------
 
   function formatTime(ms) {
     const totalSec = Math.round(ms / 1000);
@@ -492,20 +492,20 @@
   function showWin() {
     const { asked, correct, fillerAsked, fillerCorrect } = game.stats;
     $('#win-text').innerHTML =
-      `Les ${GROUP.members.length} membres de <strong>${GROUP.name}</strong> sont ancrés en mémoire long terme.`;
+      `All ${GROUP.members.length} members of <strong>${GROUP.name}</strong> are anchored in long-term memory.`;
     $('#stat-asked').textContent = asked;
     $('#stat-accuracy').textContent = Math.round((correct / asked) * 100) + '%';
     $('#stat-time').textContent = formatTime(elapsedMs);
     $('#stat-filler-wrap').classList.toggle('hidden', !fillerAsked);
     if (fillerAsked) {
-      $('#stat-filler-label').textContent = fillerType() === 'hangul' ? 'Hangul' : 'Calculs';
+      $('#stat-filler-label').textContent = fillerType() === 'hangul' ? 'Hangul' : 'Math';
       $('#stat-filler').textContent = `${fillerCorrect || 0}/${fillerAsked}`;
     }
     clearSave();
     show('win');
   }
 
-  // ---------- Démarrage ----------
+  // ---------- Startup ----------
 
   function startNewGame() {
     clearTimeout(nextTimer);
@@ -543,7 +543,7 @@
 
   $('#btn-replay').addEventListener('click', () => startNewGame());
 
-  // ---------- Réglages ----------
+  // ---------- Settings ----------
 
   const settingsDialog = $('#settings-dialog');
 
@@ -583,11 +583,11 @@
     r.addEventListener('change', () => {
       prefs.fillerType = r.value;
       savePrefs();
-      if (game) renderFillerScore(); // met à jour l'icône de la pastille
+      if (game) renderFillerScore(); // refreshes the pill icon
     });
   });
 
-  // Clic sur le fond = fermer
+  // Click on the backdrop = close
   settingsDialog.addEventListener('click', (e) => {
     if (e.target === settingsDialog) settingsDialog.close();
   });
@@ -599,7 +599,7 @@
 
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(() => { /* hors ligne / non supporté */ });
+      navigator.serviceWorker.register('sw.js').catch(() => { /* offline / unsupported */ });
     });
   }
 })();

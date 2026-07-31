@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#12101f">
-  <meta name="description" content="Jeu de mémorisation : apprends les noms des membres du groupe NEBULA par répétition espacée.">
+  <meta name="description" content="Memory game: learn the names of the NEBULA members through spaced repetition.">
   <title>Idol Memory — NEBULA</title>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
@@ -13,55 +13,55 @@
 </head>
 <body>
 
-  <!-- Écran 1 : Accueil / Étude -->
+  <!-- Screen 1: Home / Study -->
   <section id="screen-home" class="screen">
-    <button id="btn-settings-home" class="btn-icon home-settings" aria-label="Réglages">⚙</button>
+    <button id="btn-settings-home" class="btn-icon home-settings" aria-label="Settings">⚙</button>
     <header class="home-header">
       <h1 id="group-logo" class="logo"></h1>
       <p class="tagline"></p>
     </header>
     <div id="study-grid" class="study-grid"></div>
     <div class="home-actions">
-      <button id="btn-start" class="btn btn-primary">Commencer</button>
-      <button id="btn-resume" class="btn btn-ghost hidden">Reprendre la partie</button>
+      <button id="btn-start" class="btn btn-primary">Start</button>
+      <button id="btn-resume" class="btn btn-ghost hidden">Resume game</button>
     </div>
     <details class="rules">
-      <summary>Comment ça marche ?</summary>
-      <p>Une photo s'affiche : <strong>touche le bon nom</strong>. Chaque membre traverse
-      trois niveaux de mémoire : <span class="dot dot-short"></span> courte,
-      <span class="dot dot-medium"></span> moyenne puis <span class="dot dot-long"></span> longue —
-      chacun se complète par 1, 2 ou 3 bonnes réponses d'affilée selon la difficulté (⚙),
-      la longue lors de contrôles espacés. Des <strong>mini-calculs</strong> s'intercalent
-      quand il le faut pour garantir cet espacement. Une erreur ramène le membre en mémoire
-      courte. Quand toutes les jauges sont pleines, c'est gagné !</p>
+      <summary>How does it work?</summary>
+      <p>A photo appears: <strong>tap the right name</strong>. Each member travels through
+      three memory levels: <span class="dot dot-short"></span> short,
+      <span class="dot dot-medium"></span> medium, then <span class="dot dot-long"></span> long —
+      each one is completed with 1, 2 or 3 correct answers in a row depending on the
+      difficulty (⚙), the long level during spaced check-ups. <strong>Mini quizzes</strong> are
+      interleaved when needed to guarantee that spacing. A mistake sends the member back to
+      short-term memory. Fill every gauge and you win!</p>
     </details>
   </section>
 
-  <!-- Écran 2 : Jeu -->
+  <!-- Screen 2: Game -->
   <section id="screen-game" class="screen hidden">
     <header class="game-header">
-      <button id="btn-quit" class="btn-icon" aria-label="Retour à l'accueil">←</button>
-      <div id="progress-tokens" class="progress-tokens" aria-label="Mémoire par membre"></div>
+      <button id="btn-quit" class="btn-icon" aria-label="Back to home">←</button>
+      <div id="progress-tokens" class="progress-tokens" aria-label="Memory per member"></div>
       <div id="turn-counter" class="turn-counter">#1</div>
-      <button id="btn-settings-game" class="btn-icon" aria-label="Réglages">⚙</button>
+      <button id="btn-settings-game" class="btn-icon" aria-label="Settings">⚙</button>
     </header>
 
-    <!-- Mode 1 : barre globale -->
-    <div class="victory-meter" aria-label="Progression vers la victoire">
+    <!-- Mode 1: global bar -->
+    <div class="victory-meter" aria-label="Progress toward victory">
       <div class="victory-track"><div id="victory-fill" class="victory-fill"></div></div>
       <span id="victory-delta" class="victory-delta" aria-live="polite"></span>
       <span id="victory-pct" class="victory-pct">0%</span>
     </div>
 
-    <!-- Mode 2 : une barre verticale par membre, photo en dessous -->
-    <div id="member-bars" class="member-bars hidden" aria-label="Score par membre"></div>
+    <!-- Mode 2: one vertical bar per member, photo below -->
+    <div id="member-bars" class="member-bars hidden" aria-label="Score per member"></div>
 
-    <!-- Score des cartes intercalées (calculs / hangul) -->
-    <div id="filler-score" class="filler-score hidden" aria-label="Score des cartes intercalées"></div>
+    <!-- Interleaved-card score (math / hangul) -->
+    <div id="filler-score" class="filler-score hidden" aria-label="Interleaved-card score"></div>
 
     <div class="photo-zone">
-      <div id="photo-card" class="photo-card" aria-label="Qui est-ce ?"></div>
-      <p class="prompt">Qui est-ce ?</p>
+      <div id="photo-card" class="photo-card" aria-label="Who is this?"></div>
+      <p class="prompt">Who is this?</p>
     </div>
 
     <div id="feedback" class="feedback hidden" aria-live="polite"></div>
@@ -69,70 +69,70 @@
     <div id="names-grid" class="names-grid"></div>
   </section>
 
-  <!-- Écran 3 : Victoire -->
+  <!-- Screen 3: Victory -->
   <section id="screen-win" class="screen hidden">
     <div class="win-box">
       <div class="win-emoji">🏆</div>
-      <h2>Bravo !</h2>
+      <h2>Well done!</h2>
       <p id="win-text"></p>
       <dl class="win-stats">
         <div><dt>Questions</dt><dd id="stat-asked">0</dd></div>
-        <div><dt>Précision</dt><dd id="stat-accuracy">0%</dd></div>
-        <div><dt>Temps</dt><dd id="stat-time">0:00</dd></div>
-        <div id="stat-filler-wrap" class="hidden"><dt id="stat-filler-label">Calculs</dt><dd id="stat-filler">0/0</dd></div>
+        <div><dt>Accuracy</dt><dd id="stat-accuracy">0%</dd></div>
+        <div><dt>Time</dt><dd id="stat-time">0:00</dd></div>
+        <div id="stat-filler-wrap" class="hidden"><dt id="stat-filler-label">Math</dt><dd id="stat-filler">0/0</dd></div>
       </dl>
-      <button id="btn-replay" class="btn btn-primary">Rejouer</button>
+      <button id="btn-replay" class="btn btn-primary">Play again</button>
     </div>
   </section>
 
-  <!-- Réglages -->
+  <!-- Settings -->
   <dialog id="settings-dialog">
-    <h3>Réglages</h3>
-    <p class="dialog-sub">Difficulté</p>
+    <h3>Settings</h3>
+    <p class="dialog-sub">Difficulty</p>
     <div class="difficulty-row">
       <label class="diff-option">
         <input type="radio" name="difficulty" value="facile">
-        <span><strong>Facile</strong><small>1 par niveau</small></span>
+        <span><strong>Easy</strong><small>1 per level</small></span>
       </label>
       <label class="diff-option">
         <input type="radio" name="difficulty" value="moyen">
-        <span><strong>Moyen</strong><small>2 par niveau</small></span>
+        <span><strong>Medium</strong><small>2 per level</small></span>
       </label>
       <label class="diff-option">
         <input type="radio" name="difficulty" value="difficile">
-        <span><strong>Difficile</strong><small>3 par niveau</small></span>
+        <span><strong>Hard</strong><small>3 per level</small></span>
       </label>
     </div>
-    <p class="dialog-hint">Nombre de bonnes réponses d'affilée pour compléter chaque niveau de mémoire —
-    3 niveaux (courte, moyenne, longue), donc des jauges de 3, 6 ou 9 crans.</p>
-    <p class="dialog-sub">Cartes intercalées</p>
+    <p class="dialog-hint">How many correct answers in a row it takes to complete each memory
+    level — 3 levels (short, medium, long), so gauges of 3, 6 or 9 steps.</p>
+    <p class="dialog-sub">Interleaved cards</p>
     <label class="mode-option">
       <input type="radio" name="filler-type" value="math">
-      <span><strong>Calcul mental</strong>
-      <small>Additions, soustractions et multiplications rapides.</small></span>
+      <span><strong>Mental math</strong>
+      <small>Quick additions, subtractions and multiplications.</small></span>
     </label>
     <label class="mode-option">
       <input type="radio" name="filler-type" value="hangul">
-      <span><strong>Nom coréen</strong>
-      <small>Un nom s'affiche en hangul : retrouve quel membre s'écrit ainsi.</small></span>
+      <span><strong>Korean name</strong>
+      <small>A name appears in hangul: find which member spells that way.</small></span>
     </label>
-    <p class="dialog-hint">Ces cartes s'intercalent entre deux passages d'un visage quand la file
-    est trop courte (petit effectif) : elles occupent ta mémoire pour garantir un vrai espacement —
-    sans elles, impossible de tester la mémoire moyenne ou longue. Leurs réponses ne touchent pas
-    aux jauges ; leur score s'affiche à part (🧮 ou 한 <em class="romaja-inline">han</em>).
-    Sur les cartes coréennes, la romanisation est révélée avec la réponse.</p>
-    <p class="dialog-sub">Affichage du score</p>
+    <p class="dialog-hint">These cards are interleaved between two sightings of a face when the
+    queue is too short (small roster): they keep your memory busy to guarantee real spacing —
+    without them, medium- and long-term memory could never be tested. Their answers never touch
+    the gauges; their score shows separately (🧮 or 한 <em class="romaja-inline">han</em>).
+    On Korean cards, the romanization is revealed along with the answer.</p>
+    <p class="dialog-sub">Score display</p>
     <label class="mode-option">
       <input type="radio" name="score-mode" value="global">
-      <span><strong>Barre globale</strong>
-      <small>Une barre de progression unique, graduée, avec un jeton par membre.</small></span>
+      <span><strong>Global bar</strong>
+      <small>A single graduated progress bar, plus one token per member.</small></span>
     </label>
     <label class="mode-option">
       <input type="radio" name="score-mode" value="perMember">
-      <span><strong>Barres par membre</strong>
-      <small>Une barre verticale par membre avec sa photo : le score monte image par image.</small></span>
+      <span><strong>Bars per member</strong>
+      <small>One vertical bar per member with their photo: the score climbs picture by picture.</small></span>
     </label>
-    <form method="dialog"><button class="btn btn-primary">Fermer</button></form>
+    <form method="dialog"><button class="btn btn-primary">Close</button></form>
   </dialog>
 
   <script src="js/data.js"></script>

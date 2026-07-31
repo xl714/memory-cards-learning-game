@@ -1,28 +1,28 @@
-// Moteur de répétition espacée (système Leitner à 3 boîtes) — logique pure, sans DOM.
+// Spaced-repetition engine (3-box Leitner system) — pure logic, no DOM.
 //
-// Boîtes : 0 = mémoire courte, 1 = mémoire moyenne, 2 = mémoire longue.
-// La difficulté fixe `stepsPerLevel` : le nombre de bonnes réponses consécutives
-// nécessaires pour COMPLÉTER chaque niveau de mémoire (facile 1, moyen 2, difficile 3).
-// Il y a 3 niveaux, donc la jauge d'un membre fait 3 x stepsPerLevel crans :
-//   - compléter la courte  (streak >= spl)     -> il entre en mémoire moyenne
-//   - compléter la moyenne (streak >= 2 x spl) -> il entre en mémoire longue
-//   - compléter la longue  (streak >= 3 x spl) -> membre acquis, ses derniers crans
-//     se gagnent lors des contrôles espacés de la mémoire longue.
-// La boîte est DÉRIVÉE de la série ; une erreur remet la série à zéro.
+// Boxes: 0 = short-term memory, 1 = medium-term, 2 = long-term.
+// The difficulty sets `stepsPerLevel`: how many consecutive correct answers it
+// takes to COMPLETE each memory level (easy 1, medium 2, hard 3).
+// There are 3 levels, so a member's gauge holds 3 x stepsPerLevel steps:
+//   - complete short  (streak >= spl)     -> the member enters medium-term memory
+//   - complete medium (streak >= 2 x spl) -> the member enters long-term memory
+//   - complete long   (streak >= 3 x spl) -> member mastered; those last steps are
+//     earned during the spaced check-ups of long-term memory.
+// The box is DERIVED from the streak; a mistake resets the streak to zero.
 //
-// La partie est une file de cartes ; la question courante est la tête de file.
-// Après chaque réponse, la carte est réinsérée plus ou moins loin selon sa boîte :
-//   - courte  -> position 2 (revient comme 3e question)
-//   - moyenne -> position 4-5
-//   - longue  -> position 10-12 (contrôles rares)
-// L'espacement est GARANTI : si la file est trop courte pour offrir l'écart voulu
-// (petit effectif), elle est complétée par des cartes d'interférence (mini-calculs,
-// jeton FILLER) qui occupent la mémoire du joueur entre deux passages d'un visage.
-// Victoire quand toutes les jauges sont pleines (tous les niveaux complétés).
+// A game is a queue of cards; the current question is the head of the queue.
+// After each answer the card is reinserted nearer or farther based on its box:
+//   - short  -> position 2 (comes back as the 3rd question)
+//   - medium -> position 4-5
+//   - long   -> position 10-12 (rare check-ups)
+// Spacing is GUARANTEED: when the queue is too short to provide the intended gap
+// (small roster), it is padded with interference cards (mini quizzes, FILLER
+// token) that keep the player's memory busy between two sightings of a face.
+// Victory when every gauge is full (all levels completed).
 
 const BOX = { SHORT: 0, MEDIUM: 1, LONG: 2 };
-const MEMORY_LEVELS = 3; // courte, moyenne, longue — chacune à compléter
-const FILLER = '#math';  // carte d'interférence dans la file (ne peut pas être un id de membre)
+const MEMORY_LEVELS = 3; // short, medium, long — each must be completed
+const FILLER = '#math';  // interference card in the queue (cannot collide with a member id)
 
 const GAP = {
   [BOX.SHORT]: () => 2,
@@ -40,8 +40,8 @@ function shuffle(arr, rnd) {
 }
 
 class MemoryGame {
-  // memberIds : identifiants de cartes ; rnd : aléa injectable (tests) ;
-  // stepsPerLevel : bonnes réponses consécutives par niveau de mémoire.
+  // memberIds: card identifiers; rnd: injectable randomness (tests);
+  // stepsPerLevel: consecutive correct answers per memory level.
   constructor(memberIds, rnd = Math.random, stepsPerLevel = 2) {
     this.rnd = rnd;
     this.spl = stepsPerLevel;
@@ -53,12 +53,12 @@ class MemoryGame {
     this.stats = { asked: 0, correct: 0, wrong: 0 };
   }
 
-  // Série totale pour remplir une jauge : 3 niveaux x stepsPerLevel crans
+  // Total streak to fill a gauge: 3 levels x stepsPerLevel steps
   get masterStreak() {
     return this.spl * MEMORY_LEVELS;
   }
 
-  // Changer la difficulté en cours de partie : les séries restent, les seuils bougent.
+  // Change difficulty mid-game: streaks stay, thresholds move.
   setStepsPerLevel(n) {
     this.spl = n;
   }
@@ -71,7 +71,7 @@ class MemoryGame {
     return this.queue[0] === FILLER;
   }
 
-  // Consomme la carte d'interférence courante (mini-calcul) ; sans effet sur les jauges.
+  // Consumes the current interference card (mini quiz); no effect on the gauges.
   resolveFiller(correct) {
     if (this.queue[0] !== FILLER) return;
     this.queue.shift();
@@ -81,34 +81,34 @@ class MemoryGame {
 
   boxOf(id) {
     const s = this.cards[id].streak;
-    if (s >= this.spl * 2) return BOX.LONG;   // courte et moyenne complétées
-    if (s >= this.spl) return BOX.MEDIUM;     // courte complétée
+    if (s >= this.spl * 2) return BOX.LONG;   // short and medium completed
+    if (s >= this.spl) return BOX.MEDIUM;     // short completed
     return BOX.SHORT;
   }
 
-  // Crans acquis par la carte, bornés à la jauge pleine
+  // Steps earned by the card, capped at a full gauge
   stepsOf(id) {
     return Math.min(this.cards[id].streak, this.masterStreak);
   }
 
-  // Un membre est acquis quand sa jauge est pleine : la mémoire longue aussi
-  // doit être complétée (via ses contrôles espacés), pas seulement atteinte.
+  // A member is mastered when their gauge is full: long-term memory must be
+  // completed too (through its spaced check-ups), not merely reached.
   isWon() {
     return Object.keys(this.cards).every((id) => this.cards[id].streak >= this.masterStreak);
   }
 
-  // Progression vers la victoire, entre 0 et 1 : chaque membre doit remplir sa jauge
-  // (masterStreak crans) ; une erreur remet sa série à zéro et le curseur redescend.
+  // Progress toward victory, between 0 and 1: every member must fill their gauge
+  // (masterStreak steps); a mistake resets their streak and the meter goes down.
   progress() {
     const ids = Object.keys(this.cards);
     const done = ids.reduce((sum, id) => sum + this.stepsOf(id), 0);
     return done / (ids.length * this.masterStreak);
   }
 
-  // Enregistre la réponse pour la carte courante et replanifie sa prochaine apparition.
-  // Renvoie { correct, card } pour piloter le feedback UI.
+  // Records the answer for the current card and schedules its next appearance.
+  // Returns { correct, card } to drive the UI feedback.
   answer(chosenId) {
-    if (this.nextIsFiller()) throw new Error('carte d’interférence en tête de file : utiliser resolveFiller()');
+    if (this.nextIsFiller()) throw new Error('interference card at the head of the queue: use resolveFiller()');
     const id = this.queue.shift();
     const card = this.cards[id];
     const correct = chosenId === id;
@@ -128,8 +128,8 @@ class MemoryGame {
 
   _reinsert(card) {
     const pos = GAP[this.boxOf(card.id)](this.rnd);
-    // Espacement garanti : si la file ne peut pas offrir l'écart voulu, on la
-    // complète par des cartes d'interférence avant de replacer la carte.
+    // Guaranteed spacing: when the queue cannot provide the intended gap, pad
+    // it with interference cards before reinserting the card.
     while (this.queue.length < pos) this.queue.push(FILLER);
     this.queue.splice(pos, 0, card.id);
   }

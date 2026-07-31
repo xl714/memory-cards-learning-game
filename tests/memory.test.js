@@ -1,13 +1,13 @@
-// Test rapide du moteur de répétition espacée : node tests/memory.test.js
+// Quick spaced-repetition engine test: node tests/memory.test.js
 const assert = require('assert');
 const { MemoryGame, BOX, FILLER } = require('../js/memory.js');
 
-// Joue parfaitement jusqu'à la victoire (résout aussi les cartes d'interférence)
-// et renvoie { turns: réponses visages, fillers: calculs traversés }.
+// Plays perfectly until victory (also resolving interference cards) and
+// returns { turns: face answers, fillers: quizzes passed through }.
 function playPerfect(g, maxTurns = 2000) {
   let turns = 0, fillers = 0;
   while (!g.isWon()) {
-    assert.ok(turns + fillers < maxTurns, 'la partie doit converger');
+    assert.ok(turns + fillers < maxTurns, 'the game must converge');
     if (g.nextIsFiller()) { g.resolveFiller(true); fillers++; }
     else { g.answer(g.current()); turns++; }
   }
@@ -15,10 +15,10 @@ function playPerfect(g, maxTurns = 2000) {
 }
 
 const IDS = ['a', 'b', 'c', 'd', 'e', 'f', 'g'];
-// Aléa déterministe : toujours 0 => pas de mélange, gaps minimaux (moyenne=4, longue=10)
+// Deterministic randomness: always 0 => no shuffle, minimal gaps (medium=4, long=10)
 const rnd0 = () => 0;
 
-// --- KO : retour en mémoire courte, réinsertion en position 2 (revient comme 3e question)
+// --- KO: back to short-term memory, reinserted at position 2 (returns as 3rd question)
 {
   const g = new MemoryGame(IDS, rnd0);
   const first = g.current();
@@ -26,53 +26,53 @@ const rnd0 = () => 0;
   assert.strictEqual(correct, false);
   assert.strictEqual(g.boxOf(first), BOX.SHORT);
   assert.strictEqual(g.cards[first].streak, 0);
-  assert.strictEqual(g.queue.indexOf(first), 2, 'une carte ratée revient en position 2');
+  assert.strictEqual(g.queue.indexOf(first), 2, 'a failed card comes back at position 2');
 }
 
-// --- Les seuils suivent la difficulté : chaque niveau se complète en spl réussites,
-//     jauge de 3 x spl crans (la mémoire longue doit aussi être complétée)
+// --- Thresholds follow the difficulty: each level completes in spl correct answers,
+//     3 x spl step gauge (long-term memory must be completed too)
 {
   for (const [spl, toMedium, toLong, master] of [[1, 1, 2, 3], [2, 2, 4, 6], [3, 3, 6, 9]]) {
     const g = new MemoryGame(['x'], rnd0, spl);
-    assert.strictEqual(g.masterStreak, master, `jauge de ${master} crans pour spl=${spl}`);
+    assert.strictEqual(g.masterStreak, master, `${master}-step gauge for spl=${spl}`);
     for (let i = 0; i < master; i++) {
       const expected = i >= toLong ? BOX.LONG : i >= toMedium ? BOX.MEDIUM : BOX.SHORT;
       assert.strictEqual(g.boxOf('x'), expected, `spl=${spl}, streak=${i}`);
-      assert.strictEqual(g.isWon(), false, `spl=${spl}, streak=${i} : pas encore gagné`);
+      assert.strictEqual(g.isWon(), false, `spl=${spl}, streak=${i}: not won yet`);
       while (g.nextIsFiller()) g.resolveFiller(true);
       g.answer('x');
     }
     assert.strictEqual(g.boxOf('x'), BOX.LONG);
-    assert.ok(g.isWon(), `spl=${spl} : gagné après ${master} réussites (jauge pleine)`);
+    assert.ok(g.isWon(), `spl=${spl}: won after ${master} correct answers (full gauge)`);
   }
 }
 
-// --- Une carte en mémoire moyenne est replanifiée plus loin qu'une carte courte
+// --- A medium-memory card is rescheduled farther than a short-memory one
 {
-  const g = new MemoryGame(IDS, rnd0, 1); // facile : 1 réussite -> moyenne
+  const g = new MemoryGame(IDS, rnd0, 1); // easy: 1 correct answer -> medium
   const first = g.current();
   g.answer(first);
   assert.strictEqual(g.boxOf(first), BOX.MEDIUM);
-  assert.strictEqual(g.queue.indexOf(first), 4, 'carte moyenne replanifiée vers la position 4');
+  assert.strictEqual(g.queue.indexOf(first), 4, 'medium card rescheduled around position 4');
 }
 
-// --- Espacement garanti par cartes d'interférence : même à 1 ou 2 membres,
-//     l'écart demandé est respecté (complété par des mini-calculs)
+// --- Spacing guaranteed by interference cards: even with 1 or 2 members,
+//     the intended gap is honored (padded with mini quizzes)
 {
   const g = new MemoryGame(['solo'], rnd0, 1);
-  g.answer('solo'); // -> moyenne, écart voulu : 4
+  g.answer('solo'); // -> medium, intended gap: 4
   assert.deepStrictEqual(g.queue, [FILLER, FILLER, FILLER, FILLER, 'solo'],
-    'la file est complétée par 4 calculs avant le retour de la carte');
+    'the queue is padded with 4 quizzes before the card returns');
   for (let i = 0; i < 4; i++) { assert.ok(g.nextIsFiller()); g.resolveFiller(true); }
   assert.strictEqual(g.current(), 'solo');
-  g.answer('solo'); // -> longue (facile), écart voulu : 10
-  assert.strictEqual(g.queue.indexOf('solo'), 10, 'contrôle de mémoire longue après 10 cartes');
+  g.answer('solo'); // -> long (easy), intended gap: 10
+  assert.strictEqual(g.queue.indexOf('solo'), 10, 'long-term check-up after 10 cards');
   assert.strictEqual(g.queue.filter((x) => x === FILLER).length, 10);
   assert.strictEqual(g.stats.fillerAsked, 4);
   assert.strictEqual(g.stats.fillerCorrect, 4);
 }
 
-// --- Un calcul raté n'affecte aucune jauge
+// --- A failed quiz affects no gauge
 {
   const g = new MemoryGame(['solo'], rnd0, 1);
   g.answer('solo');
@@ -85,19 +85,19 @@ const rnd0 = () => 0;
   assert.strictEqual(g.stats.fillerCorrect || 0, 0);
 }
 
-// --- Partie parfaite à 1 membre : gagnable, avec de vrais écarts entre passages
+// --- Perfect solo game: winnable, with real gaps between sightings
 {
   const g = new MemoryGame(['solo'], Math.random, 1);
   const { turns, fillers } = playPerfect(g);
-  assert.strictEqual(turns, 3, '3 réponses visage suffisent en facile (jauge de 3)');
-  assert.ok(fillers >= 14, `au moins 4 + 10 calculs d'interférence (obtenu : ${fillers})`);
+  assert.strictEqual(turns, 3, '3 face answers suffice on easy (3-step gauge)');
+  assert.ok(fillers >= 14, `at least 4 + 10 interference quizzes (got: ${fillers})`);
 }
 
-// --- Un KO fait retomber une carte montée en mémoire courte
+// --- A KO drops a climbed card back to short-term memory
 {
   const g = new MemoryGame(IDS, rnd0, 1);
   const first = g.current();
-  g.answer(first); // -> moyenne
+  g.answer(first); // -> medium
   while (g.current() !== first) {
     if (g.nextIsFiller()) g.resolveFiller(true);
     else g.answer(g.current());
@@ -107,40 +107,40 @@ const rnd0 = () => 0;
   assert.strictEqual(g.cards[first].streak, 0);
 }
 
-// --- Changement de difficulté en cours de partie : les séries restent, les seuils bougent
+// --- Changing difficulty mid-game: streaks stay, thresholds move
 {
-  const g = new MemoryGame(['x', 'y'], rnd0, 3); // difficile
+  const g = new MemoryGame(['x', 'y'], rnd0, 3); // hard
   g.cards.x.streak = 2;
-  // streak 2 : encore courte en difficile (niveau complété à 3)…
+  // streak 2: still short on hard (level completes at 3)…
   assert.strictEqual(g.boxOf('x'), BOX.SHORT);
-  g.setStepsPerLevel(1); // …mais longue en facile (longue atteinte à 2, complétée à 3)
+  g.setStepsPerLevel(1); // …but long on easy (long reached at 2, completed at 3)
   assert.strictEqual(g.boxOf('x'), BOX.LONG);
-  assert.strictEqual(g.isWon(), false, 'longue atteinte mais pas complétée');
+  assert.strictEqual(g.isWon(), false, 'long-term reached but not completed');
   g.cards.x.streak = 3;
   g.cards.y.streak = 3;
-  assert.ok(g.isWon(), 'jauges pleines en facile (3 crans)');
-  g.setStepsPerLevel(2); // en moyen (longue atteinte à 4) : streak 3 => encore moyenne
+  assert.ok(g.isWon(), 'gauges full on easy (3 steps)');
+  g.setStepsPerLevel(2); // on medium (long reached at 4): streak 3 => still medium
   assert.strictEqual(g.boxOf('x'), BOX.MEDIUM);
   assert.strictEqual(g.isWon(), false);
 }
 
-// --- Victoire : tout juste => partie gagnée, en un nombre de tours plausible
+// --- Victory: all-correct play wins, in a plausible number of turns
 {
   for (const [spl, minTurns] of [[1, 21], [2, 42], [3, 63]]) {
     const g = new MemoryGame(IDS, Math.random, spl);
     const { turns } = playPerfect(g);
-    // Minimum 7 x 3 x spl ; quelques contrôles de membres déjà acquis peuvent s'y ajouter
-    // pendant que les autres finissent.
+    // Minimum 7 x 3 x spl; a few check-ups of already-mastered members may add
+    // to it while the others finish.
     assert.ok(turns >= minTurns && turns <= minTurns + 15,
-      `~${minTurns} réponses visage pour spl=${spl} (obtenu : ${turns})`);
+      `~${minTurns} face answers for spl=${spl} (got: ${turns})`);
     assert.strictEqual(g.progress(), 1);
     assert.strictEqual(g.stats.wrong, 0);
   }
 }
 
-// --- Progression : chaque réussite consécutive vaut 1/(membres x jauge), une erreur redescend
+// --- Progress: each consecutive correct answer is worth 1/(members x gauge), mistakes go down
 {
-  const g = new MemoryGame(IDS, rnd0); // moyen : jauge de 6
+  const g = new MemoryGame(IDS, rnd0); // medium: 6-step gauge
   assert.strictEqual(g.progress(), 0);
   const first = g.current();
   g.answer(first);
@@ -151,24 +151,24 @@ const rnd0 = () => 0;
   }
   const before = g.progress();
   g.answer('WRONG');
-  assert.ok(g.progress() < before, 'le curseur redescend après une erreur');
+  assert.ok(g.progress() < before, 'the meter goes down after a mistake');
 }
 
-// --- Le moteur est agnostique de l'effectif : partie parfaite à 4 membres (facile)
+// --- The engine is roster-agnostic: perfect 4-member game (easy)
 {
   const g = new MemoryGame(['a', 'b', 'c', 'd'], Math.random, 1);
   const { turns } = playPerfect(g);
-  assert.ok(turns >= 12 && turns <= 20, `~12 réponses visage minimum (obtenu : ${turns})`);
+  assert.ok(turns >= 12 && turns <= 20, `~12 face answers minimum (got: ${turns})`);
 }
 
-// --- Jamais deux fois la même carte de suite, calculs compris (partie chaotique)
+// --- Never the same card twice in a row, quizzes included (chaotic game)
 {
   const g = new MemoryGame(IDS);
   let prev = null;
   for (let i = 0; i < 400 && !g.isWon(); i++) {
     const cur = g.current();
     if (cur !== FILLER) {
-      assert.notStrictEqual(cur, prev, 'le même visage ne doit pas être posé deux fois de suite');
+      assert.notStrictEqual(cur, prev, 'the same face must not be asked twice in a row');
     }
     if (g.nextIsFiller()) g.resolveFiller(i % 4 === 0);
     else g.answer(i % 3 === 0 ? 'WRONG' : cur);
@@ -176,7 +176,7 @@ const rnd0 = () => 0;
   }
 }
 
-// --- Sérialisation / reprise (la difficulté est réappliquée à la reprise)
+// --- Serialization / resume (difficulty is reapplied on resume)
 {
   const g = new MemoryGame(IDS, rnd0, 3);
   g.answer(g.current());
@@ -188,4 +188,4 @@ const rnd0 = () => 0;
   assert.strictEqual(restored.masterStreak, 9);
 }
 
-console.log('✔ tous les tests du moteur passent');
+console.log('✔ all engine tests pass');

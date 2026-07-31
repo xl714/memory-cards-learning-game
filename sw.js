@@ -1,4 +1,4 @@
-// Service worker : app shell en cache-first, images en stale-while-revalidate.
+// Service worker: cache-first app shell, stale-while-revalidate images.
 const VERSION = 'v1';
 const SHELL_CACHE = `idol-memory-shell-${VERSION}`;
 const IMG_CACHE = `idol-memory-img-${VERSION}`;
@@ -38,8 +38,8 @@ self.addEventListener('fetch', (event) => {
 
   const url = new URL(req.url);
 
-  // Portraits (cross-origin) : stale-while-revalidate — les réponses opaques sont mises en cache
-  // pour que le jeu fonctionne hors ligne après un premier chargement.
+  // Portraits (cross-origin): stale-while-revalidate — opaque responses are cached
+  // so the game works offline after a first load.
   if (url.hostname === 'api.images.cat') {
     event.respondWith(
       caches.open(IMG_CACHE).then(async (cache) => {
@@ -56,7 +56,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // App shell : cache-first, complété par le réseau.
+  // App shell: cache-first, falling back to the network.
   event.respondWith(
     caches.match(req).then((cached) => cached || fetch(req).then((res) => {
       if (res.ok && url.origin === self.location.origin) {

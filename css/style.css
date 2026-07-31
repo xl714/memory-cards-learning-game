@@ -1,4 +1,4 @@
-/* ===== Idol Memory — thème sombre "stage" ===== */
+/* ===== Idol Memory — dark "stage" theme ===== */
 :root {
   --bg: #12101f;
   --bg-soft: #1c1930;
@@ -43,7 +43,7 @@ body {
 
 .hidden { display: none !important; }
 
-/* ===== Boutons ===== */
+/* ===== Buttons ===== */
 .btn {
   font: inherit;
   font-weight: 700;
@@ -79,7 +79,7 @@ body {
   cursor: pointer;
 }
 
-/* ===== Écran accueil ===== */
+/* ===== Home screen ===== */
 .home-header { text-align: center; margin-bottom: 20px; }
 
 .logo {
@@ -93,7 +93,7 @@ body {
 
 .tagline { color: var(--text-dim); margin-top: 6px; }
 
-/* Cartes centrées horizontalement, quel que soit l'effectif (y compris ligne incomplète) */
+/* Cards centered horizontally for any roster size (incomplete last row included) */
 .study-grid {
   display: flex;
   flex-wrap: wrap;
@@ -110,7 +110,7 @@ body {
   text-align: center;
   box-shadow: var(--shadow);
   animation: pop-in 0.35s ease both;
-  animation-delay: calc(var(--i, 0) * 0.04s); /* --i posé par app.js, quel que soit l'effectif */
+  animation-delay: calc(var(--i, 0) * 0.04s); /* --i set by app.js, for any roster size */
 }
 
 .study-card .portrait { width: 100%; }
@@ -129,7 +129,7 @@ body {
 }
 .portrait img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-/* Avatar de secours si l'image ne charge pas */
+/* Fallback avatar when the image fails to load */
 .portrait .avatar-fallback {
   width: 100%;
   height: 100%;
@@ -168,7 +168,7 @@ body {
 .dot-medium { background: var(--medium); }
 .dot-long { background: var(--long); }
 
-/* ===== Écran jeu ===== */
+/* ===== Game screen ===== */
 .game-header {
   display: flex;
   align-items: center;
@@ -198,7 +198,7 @@ body {
 .token.box-2 { background: var(--long); box-shadow: 0 0 8px rgba(52, 211, 153, 0.7); }
 .token.bump { transform: scale(1.5); }
 
-/* ===== Curseur de victoire ===== */
+/* ===== Victory meter ===== */
 .victory-meter {
   display: flex;
   align-items: center;
@@ -215,7 +215,7 @@ body {
   position: relative;
 }
 
-/* Les étapes (nb membres x 3 réussites) marquées sur la barre ; --steps posé par app.js */
+/* Steps (members x gauge) marked on the bar; --steps set by app.js */
 .victory-track::after {
   content: '';
   position: absolute;
@@ -252,7 +252,7 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Gain ou perte affiché à chaque réponse : +4,8 % / -9,5 % */
+/* Gain or loss shown on every answer: +8.3% / -16.7% */
 .victory-delta {
   font-size: 13px;
   font-weight: 800;
@@ -271,7 +271,7 @@ body {
   100% { opacity: 0; }
 }
 
-/* ===== Mode 2 : une barre verticale par membre, photo en dessous ===== */
+/* ===== Mode 2: one vertical bar per member, photo below ===== */
 .member-bars {
   display: flex;
   justify-content: center;
@@ -296,7 +296,7 @@ body {
   overflow: hidden;
 }
 
-/* Les crans gradués sur chaque barre ; --bar-steps posé par app.js selon la difficulté */
+/* Graduated steps on each bar; --bar-steps set by app.js from the difficulty */
 .mbar-track::after {
   content: '';
   position: absolute;
@@ -321,7 +321,7 @@ body {
   transition: height 0.5s ease, background 0.4s ease;
 }
 
-/* Le curseur : trait clair au sommet du remplissage */
+/* The cursor: bright line at the top of the fill */
 .mbar-fill::before {
   content: '';
   position: absolute;
@@ -355,7 +355,7 @@ body {
   40% { transform: scale(1.22); }
 }
 
-/* Badge « +1 » / « -N » qui s'envole au-dessus de la barre du membre */
+/* '+1' / '-N' badge flying up above the member's bar */
 .mbar-badge {
   position: absolute;
   top: -8px;
@@ -379,7 +379,7 @@ body {
   100% { opacity: 0; transform: translate(-50%, -18px); }
 }
 
-/* ===== Dialogue réglages ===== */
+/* ===== Settings dialog ===== */
 dialog {
   margin: auto;
   border: none;
@@ -470,7 +470,7 @@ dialog form { text-align: center; margin-top: 8px; }
   color: rgba(255, 255, 255, 0.9);
 }
 
-/* Carte d'interférence : mini-calcul entre deux visages */
+/* Interference card: mini quiz between two faces */
 .photo-card.math { box-shadow: var(--shadow), 0 0 0 3px rgba(96, 165, 250, 0.4); }
 
 .math-op {
@@ -491,7 +491,7 @@ dialog form { text-align: center; margin-top: 8px; }
 
 .math-op.hangul { font-size: 68px; letter-spacing: 8px; }
 
-/* Romanisation révélée avec la réponse, en italique sous le hangul */
+/* Romanization revealed with the answer, italic below the hangul */
 .math-op .romaja {
   font-size: 22px;
   font-style: italic;
@@ -501,10 +501,10 @@ dialog form { text-align: center; margin-top: 8px; }
   animation: pop-in 0.3s ease both;
 }
 
-/* Romanisation en ligne (pastille de score, dialogue) */
+/* Inline romanization (score pill, dialog) */
 .romaja-inline { font-style: italic; font-weight: 600; opacity: 0.85; }
 
-/* Pastille de score des cartes intercalées : « 🧮 3/4 » ou « 한 3/4 » */
+/* Interleaved-card score pill: '🧮 3/4' or '한 3/4' */
 .filler-score {
   align-self: flex-end;
   font-size: 13px;
@@ -522,7 +522,7 @@ dialog form { text-align: center; margin-top: 8px; }
 
 .prompt { color: var(--text-dim); font-weight: 600; }
 
-/* ===== Grille des noms ===== */
+/* ===== Name grid ===== */
 .names-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -560,7 +560,7 @@ dialog form { text-align: center; margin-top: 8px; }
 }
 .name-btn.reveal { animation: pulse-reveal 0.6s ease 2; }
 
-/* ===== Feedback OK / KO ===== */
+/* ===== OK / KO feedback ===== */
 .feedback {
   position: fixed;
   inset: 0;
@@ -593,7 +593,7 @@ dialog form { text-align: center; margin-top: 8px; }
   text-shadow: 0 0 24px rgba(248, 113, 113, 0.6);
 }
 
-/* ===== Écran victoire ===== */
+/* ===== Victory screen ===== */
 #screen-win { justify-content: center; align-items: center; text-align: center; }
 
 .win-box {
