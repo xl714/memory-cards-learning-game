@@ -211,6 +211,22 @@ body {
   border-radius: 999px;
   background: var(--bg-soft);
   overflow: hidden;
+  position: relative;
+}
+
+/* Les 21 étapes (7 membres x 3 réussites) marquées sur la barre */
+.victory-track::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0,
+    transparent calc(100% / 21 - 1px),
+    rgba(18, 16, 31, 0.55) calc(100% / 21 - 1px),
+    rgba(18, 16, 31, 0.55) calc(100% / 21)
+  );
+  pointer-events: none;
 }
 
 .victory-fill {
@@ -218,7 +234,12 @@ body {
   width: 0%;
   border-radius: 999px;
   background: linear-gradient(90deg, var(--accent-strong), var(--accent), var(--long));
-  transition: width 0.5s ease;
+  transition: width 0.5s ease, filter 0.2s ease;
+}
+
+.victory-fill.regress {
+  background: linear-gradient(90deg, #b91c1c, var(--ko));
+  filter: brightness(1.15);
 }
 
 .victory-pct {
@@ -228,6 +249,25 @@ body {
   font-weight: 800;
   color: var(--text-dim);
   font-variant-numeric: tabular-nums;
+}
+
+/* Gain ou perte affiché à chaque réponse : +4,8 % / -9,5 % */
+.victory-delta {
+  font-size: 13px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  opacity: 0;
+}
+.victory-delta.gain { color: var(--ok); }
+.victory-delta.loss { color: var(--ko); }
+.victory-delta.show { animation: delta-pop 1.4s ease both; }
+
+@keyframes delta-pop {
+  0% { opacity: 0; transform: translateY(5px) scale(0.8); }
+  18% { opacity: 1; transform: translateY(0) scale(1.15); }
+  30% { transform: scale(1); }
+  75% { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 .photo-zone {

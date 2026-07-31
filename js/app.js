@@ -116,6 +116,24 @@
     $('#victory-pct').textContent = pct + '%';
   }
 
+  // Rend la progression/régression visible : « +4,8 % » en vert quand un membre monte
+  // d'une mémoire (court -> moyen -> long), « -9,5 % » en rouge + barre rouge quand une
+  // erreur le fait retomber en mémoire courte.
+  function showVictoryDelta(delta) {
+    if (delta === 0) return;
+    const chip = $('#victory-delta');
+    const signed = (delta > 0 ? '+' : '−') + (Math.abs(delta) * 100).toFixed(1).replace('.', ',') + ' %';
+    chip.textContent = signed;
+    chip.className = 'victory-delta ' + (delta > 0 ? 'gain' : 'loss');
+    void chip.offsetWidth; // relance l'animation
+    chip.classList.add('show');
+    if (delta < 0) {
+      const fill = $('#victory-fill');
+      fill.classList.add('regress');
+      setTimeout(() => fill.classList.remove('regress'), 900);
+    }
+  }
+
   function renderTokens() {
     renderVictoryMeter();
     const box = $('#progress-tokens');
@@ -183,8 +201,10 @@
     elapsedMs += Math.min(Date.now() - turnStart, MAX_TURN_MS);
 
     const currentId = game.current();
+    const progressBefore = game.progress();
     const { correct } = game.answer(chosenId);
     save();
+    showVictoryDelta(game.progress() - progressBefore);
 
     const buttons = [...document.querySelectorAll('.name-btn')];
     buttons.forEach((b) => { b.disabled = true; });

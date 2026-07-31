@@ -13,7 +13,10 @@ système de **répétition espacée** (méthode Leitner à 3 boîtes).
    - 🟡 **Mémoire moyenne** — bonne réponse : il revient un peu plus tard ;
    - 🟢 **Mémoire longue** — 3 bonnes réponses d'affilée : il ne revient que rarement, pour contrôle.
 4. Une erreur renvoie toujours le membre en mémoire courte (et remet son compteur à zéro).
-5. **Victoire** quand les 7 membres sont en mémoire longue — avec tes stats (questions, précision, temps).
+5. Le **curseur de victoire** montre la progression globale : 100 % = 7 membres × 3 étapes (21 graduations
+   sur la barre). Chaque promotion (court → moyen → long) fait monter le curseur avec un « +4,8 % » vert ;
+   chaque erreur affiche la perte en rouge et fait redescendre le curseur d'autant.
+6. **Victoire** quand les 7 membres sont en mémoire longue — avec tes stats (questions, précision, temps).
 
 La partie est sauvegardée automatiquement (localStorage) : tu peux fermer l'app et reprendre plus tard.
 
