@@ -8,6 +8,8 @@
   const FEEDBACK_MS_KO = 1700; // plus long : on laisse le temps de voir la bonne réponse
   const FEEDBACK_MS_MATH_OK = 600;  // les calculs s'enchaînent plus vite
   const FEEDBACK_MS_MATH_KO = 1200;
+  const FEEDBACK_MS_HANGUL_OK = 1000; // le temps de lire la romanisation révélée
+  const FEEDBACK_MS_HANGUL_KO = 1600;
   const MAX_TURN_MS = 30000;   // au-delà, le temps d'une question n'est plus compté (joueur AFK)
 
   const $ = (sel) => document.querySelector(sel);
@@ -321,7 +323,10 @@
       return;
     }
     el.classList.remove('hidden');
-    el.textContent = `${fillerType() === 'hangul' ? '한' : '🧮'} ${game.stats.fillerCorrect || 0}/${asked}`;
+    const score = `${game.stats.fillerCorrect || 0}/${asked}`;
+    el.innerHTML = fillerType() === 'hangul'
+      ? `한 <em class="romaja-inline">han</em> ${score}`
+      : `🧮 ${score}`;
   }
 
   function makeMathQuestion() {
@@ -356,6 +361,8 @@
       answer: target.name,
       choices: shuffled(GROUP.members.map((m) => m.name)),
       hangul: true,
+      // Révélée seulement avec la réponse : l'afficher pendant la question trahirait le nom.
+      romaja: target.romaja || target.name.toLowerCase(),
     };
   }
 
@@ -380,7 +387,7 @@
       const btn = document.createElement('button');
       btn.className = 'name-btn';
       btn.textContent = label;
-      btn.addEventListener('click', () => onFillerAnswer(label, q.answer));
+      btn.addEventListener('click', () => onFillerAnswer(label, q));
       grid.appendChild(btn);
     });
 
@@ -388,20 +395,28 @@
     turnStart = Date.now();
   }
 
-  function onFillerAnswer(chosen, expected) {
+  function onFillerAnswer(chosen, q) {
     if (locked) return;
     locked = true;
 
     elapsedMs += Math.min(Date.now() - turnStart, MAX_TURN_MS);
-    const correct = chosen === expected;
+    const correct = chosen === q.answer;
     game.resolveFiller(correct);
     save();
     renderFillerScore();
 
+    // Avec la réponse, on révèle la lecture du hangul (en italique sous le nom)
+    if (q.hangul) {
+      const romaja = document.createElement('em');
+      romaja.className = 'romaja';
+      romaja.textContent = q.romaja;
+      $('.math-op')?.appendChild(romaja);
+    }
+
     const buttons = [...document.querySelectorAll('.name-btn')];
     buttons.forEach((b) => { b.disabled = true; });
     const chosenBtn = buttons.find((b) => b.textContent === chosen);
-    const correctBtn = buttons.find((b) => b.textContent === expected);
+    const correctBtn = buttons.find((b) => b.textContent === q.answer);
 
     stamp(correct ? 'ok' : 'ko');
     if (correct) {
@@ -411,7 +426,9 @@
       correctBtn.classList.add('correct', 'reveal');
     }
 
-    nextTimer = setTimeout(renderQuestion, correct ? FEEDBACK_MS_MATH_OK : FEEDBACK_MS_MATH_KO);
+    nextTimer = setTimeout(renderQuestion, correct
+      ? (q.hangul ? FEEDBACK_MS_HANGUL_OK : FEEDBACK_MS_MATH_OK)
+      : (q.hangul ? FEEDBACK_MS_HANGUL_KO : FEEDBACK_MS_MATH_KO));
   }
 
   function stamp(kind) {
