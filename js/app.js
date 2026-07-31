@@ -140,22 +140,48 @@
   // Rend la progression/régression visible, selon le mode d'affichage :
   //  - mode global : chip « +8,3 % » vert / « -X % » rouge + flash rouge de la barre ;
   //  - mode par membre : la barre du membre concerné rebondit, et flashe en rouge s'il régresse.
-  function showScoreDelta(memberId, deltaSteps) {
-    if (deltaSteps === 0) return;
-    if (prefs.scoreMode === 'perMember') {
-      const idx = GROUP.members.findIndex((m) => m.id === memberId);
-      const bar = $('#member-bars').children[idx];
-      if (!bar) return;
-      bar.classList.remove('bump');
-      void bar.offsetWidth; // relance l'animation
-      bar.classList.add('bump');
-      if (deltaSteps < 0) {
-        const fill = bar.querySelector('.mbar-fill');
-        fill.classList.add('regress');
-        setTimeout(() => fill.classList.remove('regress'), 900);
+  function showScoreDelta(memberId, deltaSteps, correct) {
+    if (prefs.scoreMode !== 'perMember') {
+      if (deltaSteps !== 0) showVictoryDelta(deltaSteps / (GROUP.members.length * STREAK_TO_LONG));
+      return;
+    }
+    const idx = GROUP.members.findIndex((m) => m.id === memberId);
+    const bar = $('#member-bars').children[idx];
+    if (!bar) return;
+    const fill = bar.querySelector('.mbar-fill');
+
+    // Barre déjà pleine (mémoire longue) et contrôle réussi : halo vert, la jauge ne peut plus monter.
+    if (deltaSteps === 0) {
+      if (correct) {
+        fill.classList.add('gain-glow');
+        setTimeout(() => fill.classList.remove('gain-glow'), 900);
       }
+      return;
+    }
+
+    bar.classList.remove('bump');
+    void bar.offsetWidth; // relance l'animation
+    bar.classList.add('bump');
+
+    // Badge « +1 » / « -N » qui s'envole au-dessus de la barre du membre
+    let badge = bar.querySelector('.mbar-badge');
+    if (!badge) {
+      badge = document.createElement('span');
+      badge.className = 'mbar-badge';
+      bar.appendChild(badge);
+    }
+    badge.textContent = deltaSteps > 0 ? `+${deltaSteps}` : `−${Math.abs(deltaSteps)}`;
+    badge.classList.toggle('loss', deltaSteps < 0);
+    badge.classList.remove('show');
+    void badge.offsetWidth;
+    badge.classList.add('show');
+
+    if (deltaSteps < 0) {
+      fill.classList.add('regress');
+      setTimeout(() => fill.classList.remove('regress'), 900);
     } else {
-      showVictoryDelta(deltaSteps / (GROUP.members.length * STREAK_TO_LONG));
+      fill.classList.add('gain-glow');
+      setTimeout(() => fill.classList.remove('gain-glow'), 900);
     }
   }
 
@@ -272,7 +298,7 @@
     const stepsBefore = Math.min(game.cards[currentId].streak, STREAK_TO_LONG);
     const { correct } = game.answer(chosenId);
     save();
-    showScoreDelta(currentId, Math.min(game.cards[currentId].streak, STREAK_TO_LONG) - stepsBefore);
+    showScoreDelta(currentId, Math.min(game.cards[currentId].streak, STREAK_TO_LONG) - stepsBefore, correct);
 
     const buttons = [...document.querySelectorAll('.name-btn')];
     buttons.forEach((b) => { b.disabled = true; });

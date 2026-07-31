@@ -281,11 +281,12 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 7px;
+  position: relative;
 }
 
 .mbar-track {
-  width: 12px;
-  height: 58px;
+  width: 14px;
+  height: 64px;
   border-radius: 999px;
   background: var(--bg-soft);
   position: relative;
@@ -332,6 +333,7 @@ body {
 .mbar-fill.box-1 { background: var(--medium); }
 .mbar-fill.box-2 { background: var(--long); }
 .mbar-fill.regress { background: var(--ko); filter: brightness(1.25); }
+.mbar-fill.gain-glow { filter: brightness(1.3) drop-shadow(0 0 6px rgba(52, 211, 153, 0.9)); }
 
 .mbar-photo {
   width: 38px;
@@ -343,11 +345,35 @@ body {
 .mbar-photo .portrait { width: 100%; height: 100%; border-radius: 50%; }
 .mbar-photo .avatar-fallback { font-size: 16px; }
 
-.mbar.bump .mbar-track { animation: bar-bump 0.45s ease; }
+.mbar.bump { animation: bar-bump 0.5s ease; }
 
 @keyframes bar-bump {
   0%, 100% { transform: scale(1); }
-  40% { transform: scale(1.2); }
+  40% { transform: scale(1.22); }
+}
+
+/* Badge « +1 » / « -N » qui s'envole au-dessus de la barre du membre */
+.mbar-badge {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--ok);
+  text-shadow: 0 0 8px rgba(18, 16, 31, 0.9);
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.mbar-badge.loss { color: var(--ko); }
+.mbar-badge.show { animation: badge-fly 1.1s ease both; }
+
+@keyframes badge-fly {
+  0% { opacity: 0; transform: translate(-50%, 6px) scale(0.7); }
+  20% { opacity: 1; transform: translate(-50%, -4px) scale(1.25); }
+  40% { transform: translate(-50%, -8px) scale(1); }
+  80% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -18px); }
 }
 
 /* ===== Dialogue réglages ===== */
